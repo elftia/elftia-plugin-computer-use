@@ -137,10 +137,21 @@ differs.
   verification and heavier use of `state.json`/`uia-tree` text, which you
   can read natively.
 
-When using a vision description tool, ask PRECISE questions, not "describe
-the screen": name the exact element, request verbatim text and pixel
-coordinates, and state the screen size. Two patterns that materially raise
-accuracy:
+When using a vision description tool, respect a strict division of labor —
+**ask it WHAT, never WHERE**:
+
+- Vision answers identity, verbatim text, and state: "which entry in the
+  list is titled ...", "what does the dialog say", "is a pasted image
+  preview visible above the input box". Vision models hallucinate pixel
+  coordinates almost universally — never ask for or trust coordinates
+  from them.
+- Coordinates come from STRUCTURAL sources only: `uia-tree` elements
+  (real BoundingRectangle bounds), `state.json` elements, or `apps`
+  window bounds. Standard pattern: vision names the element (by its
+  title) → find that element in `uia-tree`/`state.json` → click the
+  center of its real bounds (`click --state <file> --element <idx>`).
+
+Two more patterns that materially raise accuracy:
 
 1. **Follow-up on the SAME image.** Each description call is independent,
    but the screenshot file stays on disk. When an answer is vague or
