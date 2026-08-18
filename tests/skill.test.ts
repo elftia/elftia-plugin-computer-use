@@ -18,8 +18,12 @@ const FROZEN_VOCABULARY: readonly string[] = [
   '                                           # writes state.json + screen.png into --out dir',
   '                                           # state.json: active window, cursor pos, screen dims,',
   '                                           #   screenshot path+dims, optional UIA tree summary',
-  'computer-use screenshot [--window <id>] [--out <dir>] [--max-edge <px>]',
+  'computer-use screenshot [--window <id>] [--region <x1,y1,x2,y2>] [--out <dir>] [--max-edge <px>]',
   '                                           # writes screen.png; stdout JSON {path,width,height,window}',
+  '                                           # --region is screen-absolute and excludes --window',
+  'computer-use crop --in <png> --region <x1,y1,x2,y2> [--out <dir>]',
+  '                                           # crop an EXISTING image (zoom for fine text); region in the',
+  '                                           # SOURCE image's pixel frame; stdout JSON {path,width,height,source,region}',
   'computer-use click --x <n> --y <n> [--button left|right|middle] [--double|--triple] [--mods ctrl|shift|alt]',
   'computer-use click --state <state.json> --element <idx>   # element-index addressing from a prior get-state',
   'computer-use type --text <s>               # UTF-8 text input via clipboard-paste or SendInput',
@@ -97,7 +101,7 @@ describe('SKILL.md CLI vocabulary (frozen v0.5 contract pin)', () => {
     expect(missing, 'paraphrased or omitted contract lines').toEqual([]);
   });
 
-  it('carries the vocabulary as an exact fenced block with exactly the ten commands', () => {
+  it('carries the vocabulary as an exact fenced block with exactly the eleven commands', () => {
     const blocks = fencedBlocks(skillText);
     const contractBlock = blocks.find((block) =>
       block.some((line) => line.startsWith('computer-use apps ')),
