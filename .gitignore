@@ -1,0 +1,6 @@
+node_modules/
+coverage/
+*.log
+.DS_Store
+# The computer-use CLI writes its default output under <cwd>/.computer-use/
+.computer-use/
