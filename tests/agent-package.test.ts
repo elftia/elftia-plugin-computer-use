@@ -24,6 +24,7 @@ const AGENT_CATEGORIES = [
   'writing',
   'coding',
   'emotion',
+  'education',
   'creative',
 ];
 
