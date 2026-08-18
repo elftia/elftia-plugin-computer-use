@@ -137,6 +137,27 @@ differs.
   verification and heavier use of `state.json`/`uia-tree` text, which you
   can read natively.
 
+When using a vision description tool, ask PRECISE questions, not "describe
+the screen": name the exact element, request verbatim text and pixel
+coordinates, and state the screen size. Two patterns that materially raise
+accuracy:
+
+1. **Follow-up on the SAME image.** Each description call is independent,
+   but the screenshot file stays on disk. When an answer is vague or
+   suspect, call the tool again on the SAME path with a sharper question,
+   quoting the part of the previous answer you are drilling into ("the
+   third entry you listed — give its exact pixel coordinates"). Treat a
+   contradiction between two answers as a signal to stop and verify with
+   `uia-tree` text instead of guessing.
+2. **Zoom before asking.** Fine text (chat lists, menus, small labels) is
+   unreliable at full-screen resolution. Capture a tighter frame first —
+   `screenshot --window <id>` for the window, or crop the region of
+   interest — then ask about that image. A cropped question beats a
+   full-screen guess.
+
+If the description tool says it cannot read something, believe it — do not
+act on a guess.
+
 If you have neither branch available, say so — do not guess the screen from
 `state.json` coordinates alone.
 
