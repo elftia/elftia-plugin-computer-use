@@ -46,7 +46,7 @@ const EXPECTED_SUBCOMMANDS = [
 ] as const;
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const skillPath = join(repoRoot, 'agent', 'skills', 'computer-use', 'SKILL.md');
+const skillPath = join(repoRoot, 'skills', 'computer-use', 'SKILL.md');
 const skillText = readFileSync(skillPath, 'utf8').replace(/\r\n/g, '\n');
 const skillLines = skillText.split('\n');
 
