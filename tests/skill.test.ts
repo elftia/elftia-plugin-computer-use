@@ -23,7 +23,7 @@ const FROZEN_VOCABULARY: readonly string[] = [
   '                                           # --region is screen-absolute and excludes --window',
   'computer-use crop --in <png> --region <x1,y1,x2,y2> [--out <dir>]',
   '                                           # crop an EXISTING image (zoom for fine text); region in the',
-  '                                           # SOURCE image's pixel frame; stdout JSON {path,width,height,source,region}',
+  '                                           # SOURCE image\'s pixel frame; stdout JSON {path,width,height,source,region}',
   'computer-use click --x <n> --y <n> [--button left|right|middle] [--double|--triple] [--mods ctrl|shift|alt]',
   'computer-use click --state <state.json> --element <idx>   # element-index addressing from a prior get-state',
   'computer-use type --text <s>               # UTF-8 text input via clipboard-paste or SendInput',
