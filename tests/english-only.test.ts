@@ -34,9 +34,7 @@ function containsCJK(text: string): string[] {
 
 const AGENT_FACING_FILES = [
   'elftia-plugin.json',
-  'agent/manifest.json',
-  'agent/system-prompt.md',
-  'agent/skills/computer-use/SKILL.md',
+  'skills/computer-use/SKILL.md',
 ] as const;
 
 describe('english-only agent-facing content', () => {
@@ -48,7 +46,7 @@ describe('english-only agent-facing content', () => {
   }
 
   it('uses no elftia i18n key patterns in agent-facing markdown', () => {
-    for (const relPath of ['agent/system-prompt.md', 'agent/skills/computer-use/SKILL.md']) {
+    for (const relPath of ['skills/computer-use/SKILL.md']) {
       const text = readFileSync(join(repoRoot, relPath), 'utf8');
       expect(text).not.toMatch(/\bt\(\s*['"][\w.-]+\.[\w.-]+['"]/);
       expect(text).not.toMatch(/\$t\(/);

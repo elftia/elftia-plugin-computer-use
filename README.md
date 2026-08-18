@@ -25,11 +25,9 @@ the CLI exits non-zero with a clear "not yet supported on \<os\>" error.
 ## What's inside
 
 ```
-elftia-plugin.json                     # kind:agent manifest, one agentPackages entry
-agent/
-  manifest.json                        # Desktop Operator (AgentPackageManifest)
-  system-prompt.md                     # cautious desktop-operator persona
-  skills/computer-use/SKILL.md         # the agent-agnostic skill
+elftia-plugin.json                     # kind:agent manifest, one bindable skill contribution
+skills/
+  computer-use/SKILL.md                # the agent-agnostic skill (frozen v0.5 CLI vocabulary)
 ```
 
 ## Install into Elftia
@@ -37,18 +35,22 @@ agent/
 Copy this repository (or just the plugin folder) into the Elftia plugins
 root so it sits at `~/.elftia/plugins/elftia-plugin-computer-use/` with
 `elftia-plugin.json` at the top of that folder, then restart Elftia. The
-plugin appears in the plugin manager, and the **Desktop Operator** agent
-becomes available in the agent list (category: tools).
+plugin appears in the plugin manager and the **computer-use** skill becomes
+available in the skill library, ready to attach to any agent.
 
 Not installed = the capability does not exist. That is deliberate.
 
-## Using the Desktop Operator
+## Attaching the skill to an agent
 
-Pick the Desktop Operator agent in a chat and describe the desktop task in
-plain language ("open Notepad and type hello world"). The operator runs a
-strict loop — screenshot, decide, ONE action, verify — and runs under
-`permissionMode: "default"` with `allowedTools` limited to `Bash` and
-`Read`:
+The plugin ships NO agent of its own (the Desktop Operator persona was
+removed by design): computer-use is a skill for ANY agent. After install,
+attach it from the agent's skill section (agent detail -> attached skills)
+or wherever your Elftia version manages skill bindings. Installing the
+plugin never makes the skill visible by itself — visibility comes only
+from the binding you create (host design SS25.9).
+
+Once attached, the agent runs a strict loop — screenshot, decide, ONE
+action, verify — over the normal shell permission gate:
 
 - every `computer-use ...` invocation crosses the normal shell permission
   gate (there are deliberately NO auto-allow hooks);
@@ -58,13 +60,13 @@ strict loop — screenshot, decide, ONE action, verify — and runs under
   warnings) — it stops and asks you;
 - it never enters credentials you did not explicitly hand it.
 
-A multimodal model is recommended (the operator reads screenshots
-directly); text-only models work through a vision-description tool such as
-Elftia's `view_image`, at the cost of an extra call per step.
+A multimodal model is recommended (the agent reads screenshots directly);
+text-only models work through a vision-description tool such as Elftia's
+`view_image`, at the cost of an extra call per step.
 
 ## Reusing the skill from other agents
 
-`agent/skills/computer-use/SKILL.md` is agent-agnostic (CC-compatible
+`skills/computer-use/SKILL.md` is agent-agnostic (CC-compatible
 frontmatter). To use it from Claude Code or any skills-compatible agent,
 copy the skill directory into that agent's skills location:
 

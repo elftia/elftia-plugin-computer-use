@@ -1,14 +1,20 @@
 {
   "name": "computer-use",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "kind": "agent",
   "displayName": "Computer Use",
-  "description": "Desktop Operator — drives the Windows desktop through the computer-use CLI with a screenshot-first perception-action loop.",
+  "description": "Agent-agnostic desktop-control skill: drives the Windows desktop through the computer-use CLI with a screenshot-first perception-action loop. Bind it to any agent.",
   "contributes": {
-    "agentPackages": [
-      {
-        "file": "./agent/manifest.json"
-      }
-    ]
+    "agent": {
+      "skills": [
+        {
+          "id": "computer-use",
+          "path": "skills/computer-use",
+          "displayName": "Computer Use",
+          "description": "Screenshot-first perception-action loop over the computer-use CLI: apps, get-state, screenshot, click, type, key, scroll, drag, uia-tree, doctor.",
+          "recommendedAudience": "agent"
+        }
+      ]
+    }
   }
 }
