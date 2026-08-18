@@ -84,8 +84,12 @@ computer-use get-state [--app <pid>] [--out <dir>]
                                            # writes state.json + screen.png into --out dir
                                            # state.json: active window, cursor pos, screen dims,
                                            #   screenshot path+dims, optional UIA tree summary
-computer-use screenshot [--window <id>] [--out <dir>] [--max-edge <px>]
+computer-use screenshot [--window <id>] [--region <x1,y1,x2,y2>] [--out <dir>] [--max-edge <px>]
                                            # writes screen.png; stdout JSON {path,width,height,window}
+                                           # --region is screen-absolute and excludes --window
+computer-use crop --in <png> --region <x1,y1,x2,y2> [--out <dir>]
+                                           # crop an EXISTING image (zoom for fine text); region in the
+                                           # SOURCE image's pixel frame; stdout JSON {path,width,height,source,region}
 computer-use click --x <n> --y <n> [--button left|right|middle] [--double|--triple] [--mods ctrl|shift|alt]
 computer-use click --state <state.json> --element <idx>   # element-index addressing from a prior get-state
 computer-use type --text <s>               # UTF-8 text input via clipboard-paste or SendInput
@@ -136,6 +140,22 @@ differs.
   `view_image`). Slower and coarser — compensate with more frequent
   verification and heavier use of `state.json`/`uia-tree` text, which you
   can read natively.
+
+**Preferred text-only path in Elftia TinyElf: the `vision` subagent.** When
+your session model cannot see images, Elftia offers a builtin `vision`
+subagent running on the host's vision auxiliary model. Spawn it:
+
+```
+Agent(agent="vision", task="Look at <screenshot path>. Question: <precise WHAT question>")
+```
+
+It Reads the image natively at full resolution and can zoom ITSELF (its
+`crop_image` tool) when fine text needs a closer look — give it the
+precise question and let it decide whether to zoom. It is perception-only
+(never acts on the desktop) and answers with verbatim text and
+relative-position descriptions. It only exists in text-only sessions with
+a vision model configured — if it is not in your agent list, fall back to
+a vision description tool.
 
 When using a vision description tool, respect a strict division of labor —
 **ask it WHAT, never WHERE**:
