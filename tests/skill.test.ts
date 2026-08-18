@@ -39,6 +39,7 @@ const FROZEN_VOCABULARY: readonly string[] = [
 const EXPECTED_SUBCOMMANDS = [
   'apps',
   'click',
+  'crop',
   'doctor',
   'drag',
   'get-state',
