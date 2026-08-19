@@ -44,9 +44,12 @@ function walk(dir) {
   return found;
 }
 
+const VENDORED_PREFIX = 'skills/computer-use/scripts/';
 const failures = [];
 for (const file of walk(repoRoot)) {
   if (file.endsWith('.log')) continue; // transient tool output, gitignored
+  if (file.startsWith(VENDORED_PREFIX)) continue; // vendored CLI build (see skills/computer-use/package.json)
+  if (file === 'skills/computer-use/package.json') continue; // vendored version marker
   if (!ALLOWED_FILES.has(file)) failures.push(`stray file outside declared layout: ${file}`);
 }
 for (const file of REQUIRED_FILES) {
