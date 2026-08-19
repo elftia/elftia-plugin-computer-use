@@ -78,6 +78,18 @@ stdout JSON carries paths and metadata only — never base64, never giant
 blobs. Action commands optionally return a fresh screenshot reference
 (`"after": {path,...}`) when `--shot` is passed.
 
+**How to invoke the CLI:** the CLI ships INSIDE this skill
+(`scripts/`), so installing the skill installs everything — no global
+install. Throughout this document `computer-use` means:
+
+```
+node "<skill-directory>/scripts/cli.js"
+```
+
+Use the skill directory from the `[Skill directory]` note (absolute
+path). If a `computer-use` binary is also on PATH it is interchangeable.
+Verify with `node "<skill-directory>/scripts/cli.js" doctor`.
+
 ```
 computer-use apps                          # list top-level windows/apps → JSON array
 computer-use get-state [--app <pid>] [--out <dir>]
