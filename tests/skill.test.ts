@@ -170,6 +170,7 @@ describe('SKILL.md required sections', () => {
   it('teaches a doctor-first prerequisite ritual', () => {
     const prereq = section(/## Prerequisites/);
     expect(prereq).toContain('computer-use doctor');
-    expect(prereq.toLowerCase()).toContain('on path');
+    expect(prereq).toContain('scripts/');
+    expect(prereq.toLowerCase()).toContain('no global install');
   });
 });
