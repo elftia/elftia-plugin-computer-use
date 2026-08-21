@@ -10,6 +10,10 @@ import {
 import path from "node:path";
 
 const RUNTIME_ROOT_ENTRIES = Object.freeze(["elftia-plugin.json", "skills"]);
+const WORKTREE_ONLY_DIRECTORY_NAMES = new Set([
+  ".computer-use",
+  ".elftia-work",
+]);
 const REQUIRED_RUNTIME_FILES = Object.freeze([
   "elftia-plugin.json",
   "skills/computer-use/SKILL.md",
@@ -58,12 +62,24 @@ async function assertOrdinaryDirectory(directory, label) {
   return realpath(directory);
 }
 
-async function visitTree(lexicalRoot, realRoot, directory, entries) {
+async function visitTree(
+  lexicalRoot,
+  realRoot,
+  directory,
+  entries,
+  excludedDirectoryNames = new Set(),
+) {
   const children = await readdir(directory, { withFileTypes: true });
   children.sort((left, right) =>
     left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
   );
   for (const child of children) {
+    if (
+      child.isDirectory() &&
+      excludedDirectoryNames.has(child.name.toLowerCase())
+    ) {
+      continue;
+    }
     const absolutePath = path.join(directory, child.name);
     const relativePath = path
       .relative(lexicalRoot, absolutePath)
@@ -79,7 +95,13 @@ async function visitTree(lexicalRoot, realRoot, directory, entries) {
       `reparse escape is forbidden: ${relativePath}`,
     );
     if (state.isDirectory()) {
-      await visitTree(lexicalRoot, realRoot, absolutePath, entries);
+      await visitTree(
+        lexicalRoot,
+        realRoot,
+        absolutePath,
+        entries,
+        excludedDirectoryNames,
+      );
     } else if (state.isFile()) {
       const bytes = await readFile(absolutePath);
       entries.push({
@@ -142,7 +164,13 @@ export async function inventoryComputerUseSources(repoRootInput) {
       `runtime source escapes repository: ${rootEntry}`,
     );
     if (state.isDirectory()) {
-      await visitTree(repoRoot, realRepoRoot, sourcePath, entries);
+      await visitTree(
+        repoRoot,
+        realRepoRoot,
+        sourcePath,
+        entries,
+        WORKTREE_ONLY_DIRECTORY_NAMES,
+      );
     } else if (state.isFile()) {
       const bytes = await readFile(sourcePath);
       entries.push({

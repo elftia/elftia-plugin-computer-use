@@ -42,6 +42,22 @@ function fixtureRepo(): string {
   cpSync(path.join(sourceRepo, "skills"), path.join(root, "skills"), {
     recursive: true,
   });
+  const nestedComputerUseOutput = path.join(
+    root,
+    "skills",
+    "computer-use",
+    "scripts",
+    ".computer-use",
+  );
+  rmSync(nestedComputerUseOutput, { recursive: true, force: true });
+  mkdirSync(path.join(nestedComputerUseOutput, "fixture-run"), {
+    recursive: true,
+  });
+  writeFileSync(
+    path.join(nestedComputerUseOutput, "fixture-run", "doctor.png"),
+    "not shipped",
+    "utf8",
+  );
   mkdirSync(path.join(root, ".computer-use"), { recursive: true });
   writeFileSync(
     path.join(root, ".computer-use", "doctor.png"),
@@ -103,6 +119,17 @@ describe("computer-use dist producer", () => {
       ),
     ).toBe(true);
     expect(existsSync(path.join(target, ".computer-use"))).toBe(false);
+    expect(
+      existsSync(
+        path.join(
+          target,
+          "skills",
+          "computer-use",
+          "scripts",
+          ".computer-use",
+        ),
+      ),
+    ).toBe(false);
     expect(existsSync(path.join(target, "tests"))).toBe(false);
     expect(existsSync(path.join(target, "node_modules"))).toBe(false);
   });
