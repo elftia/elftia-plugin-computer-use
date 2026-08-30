@@ -16,7 +16,7 @@
     "verify": "npm run lint && npm test && npm run verify:layout && npm run build && npm run verify:dist && npm run release"
   },
   "devDependencies": {
-    "@elftia/plugin-kit": "^0.1.2",
+    "@elftia/plugin-kit": "^0.2.0",
     "@eslint/js": "^9.39.0",
     "@types/node": "^24.7.0",
     "@typescript-eslint/eslint-plugin": "^8.46.0",

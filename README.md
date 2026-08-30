@@ -42,7 +42,8 @@ npm run build
 ```
 
 For distribution, use `npm run release` and give users the matching pair from
-`release/0.8.1/`: `computer-use.zip` plus its external
+`release/0.8.1/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
+container) plus its external
 `computer-use.json` integrity sidecar. Do not install the repository root;
 source, tests and development dependencies are deliberately outside the
 install tree.
@@ -120,7 +121,7 @@ npm run build   # atomically publish the whitelist-only dist/computer-use tree
 npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
 npm run verify  # lint + test + source layout + build + shipped-byte parity
-npm run release # release/0.8.1/computer-use.zip + external computer-use.json
+npm run release # release/0.8.1/computer-use.epkg + external computer-use.json
 ```
 
 Producer tooling comes from the published `@elftia/plugin-kit` package on the
