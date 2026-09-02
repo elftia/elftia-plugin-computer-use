@@ -1,6 +1,6 @@
 {
   "name": "elftia-plugin-computer-use",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "description": "Elftia kind:agent plugin packaging the desktop-operator agent and the agent-agnostic computer-use skill for the computer-use CLI (v0.5 contract).",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "verify": "npm run lint && npm test && npm run verify:layout && npm run build && npm run verify:dist && npm run release"
   },
   "devDependencies": {
-    "@elftia/plugin-kit": "^0.2.0",
+    "@elftia/plugin-kit": "0.2.1",
     "@eslint/js": "^9.39.0",
     "@types/node": "^24.7.0",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
