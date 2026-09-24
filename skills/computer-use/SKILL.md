@@ -123,7 +123,40 @@ Reading the JSON contract:
 - `state.json` from `get-state` carries the active window, cursor position,
   screen dimensions, screenshot path+dims, and an optional UIA tree summary.
 - Do not invent commands or flags beyond the block above; if something you
-  need is missing, tell the user what is missing instead of improvising.
+  need is missing, check the optional MadoPilot section below before reporting it.
+
+## Optional MadoPilot native enhancement
+
+The vendored CLI supports `mado` when a native bundle is installed beside its
+scripts. The bundle includes the MadoPilot sidecar, OpenCV, ONNX Runtime and
+RapidOCR models; the CLI finds these automatically. Explicit absolute paths in
+`ELFTIA_MADO_PILOT_SIDECAR`, `ELFTIA_MADO_PILOT_MODEL_ROOT` and
+`ELFTIA_MADO_PILOT_RUNTIME_PATH` can override the bundle. Run
+`computer-use mado --action health` after the normal `doctor` check.
+
+```
+computer-use mado --action list-targets
+computer-use mado --action capture --target <id> [--out <dir>]
+computer-use mado --action find-template --target <id> --template <png> [--min-score <0..1>]
+computer-use mado --action wait-template --target <id> --template <png> [--min-score <0..1>] [--timeout-ms <ms>]
+computer-use mado --action read-text --target <id>
+computer-use mado --action click --target <id> --x <capture-pixel> --y <capture-pixel> --route system|window-message|process-directed --expected-hash <capture image_hash>
+```
+
+Take `<id>` from `list-targets` → `targets[].id`. The CLI starts a new process
+for each command, so the sidecar rediscovers the window and requires one exact
+match on title and verified process identity. A recreated window in the same
+process with the same title may still match: capture again and provide that
+capture's `image_hash` when clicking. Changed pixels make the click fail.
+MadoPilot coordinates are relative to the captured image, whereas core `click`
+coordinates are screen-global. One MadoPilot click sends one primary-button
+sequence tied to a fresh frame and returns a newer capture when available. If
+`after_available` is false, capture again to inspect the application effect.
+The `window-message` route can submit to a window without activating its child
+controls; prefer the route that works for the target application. If input
+fails, stop and inspect the screen;
+partial native submission must not be retried automatically. Preserve the core
+perception-action and safety rules above.
 
 ## Coordinates and scaling
 

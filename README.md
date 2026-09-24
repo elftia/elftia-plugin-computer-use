@@ -21,6 +21,19 @@ The skill requires a successful `doctor` check before operating the desktop.
 Platform support matches the CLI: **Windows first**; on macOS/Linux the CLI
 exits non-zero with a clear "not yet supported on \<os\>" error.
 
+The vendored CLI also exposes an optional `mado` command for MadoPilot window
+capture, template matching, OCR and frame-bound clicking. When a native bundle
+is present in `skills/computer-use/scripts/native/`, it is discovered without
+environment variables. Run
+`node "<installed-skill-directory>/scripts/cli.js" mado --action health`.
+The source checkout excludes binary assets from Git. Stage a bundle before
+`npm run build` using `npm run install:mado-native -- <sidecar.exe>
+<opencv_world4140.dll> <onnxruntime.dll> <model-root>`; the model root must
+contain `rapidocr-v3.9.2/`. The build includes that local bundle in `dist/`.
+Absolute `ELFTIA_MADO_PILOT_SIDECAR`, `ELFTIA_MADO_PILOT_MODEL_ROOT` and
+`ELFTIA_MADO_PILOT_RUNTIME_PATH` can override it. The sidecar source and build
+instructions live in the `elftia-computer-use` repository.
+
 ## What's inside
 
 ```
@@ -42,7 +55,7 @@ npm run build
 ```
 
 For distribution, use `npm run release` and give users the matching pair from
-`release/0.8.1/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
+`release/0.8.2/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
 container) plus its external
 `computer-use.json` integrity sidecar. Do not install the repository root;
 source, tests and development dependencies are deliberately outside the
@@ -121,7 +134,7 @@ npm run build   # atomically publish the whitelist-only dist/computer-use tree
 npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
 npm run verify  # lint + test + source layout + build + shipped-byte parity
-npm run release # release/0.8.1/computer-use.epkg + external computer-use.json
+npm run release # release/0.8.2/computer-use.epkg + external computer-use.json
 ```
 
 Producer tooling comes from the published `@elftia/plugin-kit` package on the

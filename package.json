@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "install:mado-native": "node scripts/install-mado-native.mjs",
     "build": "node scripts/build-dist.mjs",
     "test": "vitest run",
     "lint": "eslint .",

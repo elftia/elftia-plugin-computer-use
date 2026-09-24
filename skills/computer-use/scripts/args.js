@@ -12,6 +12,7 @@ export const COMMAND_NAMES = [
     'drag',
     'uia-tree',
     'doctor',
+    'mado',
 ];
 const VALUE_FLAGS = {
     apps: [],
@@ -25,6 +26,7 @@ const VALUE_FLAGS = {
     drag: ['from-x', 'from-y', 'to-x', 'to-y', 'out'],
     'uia-tree': ['app', 'max-depth', 'out'],
     doctor: [],
+    mado: ['action', 'target', 'template', 'min-score', 'timeout-ms', 'x', 'y', 'route', 'expected-hash', 'out'],
 };
 const BOOL_FLAGS = {
     apps: [],
@@ -38,6 +40,7 @@ const BOOL_FLAGS = {
     drag: ['shot'],
     'uia-tree': [],
     doctor: [],
+    mado: [],
 };
 function usage(message) {
     throw new CliError('EUSAGE', message);
@@ -115,6 +118,9 @@ function getInt(flags, name, opts = {}) {
         usage(`option --${name} must be an integer, got "${raw}"`);
     }
     const n = Number.parseInt(raw, 10);
+    if (!Number.isSafeInteger(n)) {
+        usage(`option --${name} must be a safe integer`);
+    }
     if (opts.min !== undefined && n < opts.min) {
         usage(`option --${name} must be >= ${opts.min}, got ${n}`);
     }
@@ -122,6 +128,59 @@ function getInt(flags, name, opts = {}) {
         usage(`option --${name} must be <= ${opts.max}, got ${n}`);
     }
     return n;
+}
+function madoScore(flags) {
+    const raw = getString(flags, 'min-score');
+    if (raw === undefined)
+        return 0.85;
+    const score = Number(raw);
+    if (raw.trim() === '' || !Number.isFinite(score) || score < 0 || score > 1) {
+        usage('--min-score must be a finite number between 0 and 1');
+    }
+    return score;
+}
+function rejectMadoFlags(flags, allowed) {
+    for (const key of flags.keys()) {
+        if (!allowed.includes(key))
+            usage(`--${key} is not valid for this mado action`);
+    }
+}
+function madoInvocation(flags) {
+    const action = requireString(flags, 'action');
+    const out = getString(flags, 'out');
+    if (action === 'health' || action === 'list-targets') {
+        rejectMadoFlags(flags, ['action', 'out']);
+        return { command: 'mado', action, out };
+    }
+    const target = requireString(flags, 'target');
+    if (!/^[a-f0-9]{64}$/.test(target))
+        usage('--target must be an id returned by mado list-targets');
+    if (action === 'capture' || action === 'read-text') {
+        rejectMadoFlags(flags, ['action', 'target', 'out']);
+        return { command: 'mado', action, target, out };
+    }
+    if (action === 'find-template' || action === 'wait-template') {
+        rejectMadoFlags(flags, ['action', 'target', 'template', 'min-score', 'timeout-ms', 'out']);
+        if (action === 'find-template' && flags.has('timeout-ms'))
+            usage('--timeout-ms requires wait-template');
+        const template = requireString(flags, 'template');
+        if (!template)
+            usage('--template must not be empty');
+        const timeoutMs = action === 'wait-template' ? getInt(flags, 'timeout-ms', { min: 1, max: 120000 }) ?? 10000 : undefined;
+        return { command: 'mado', action, target, template, minScore: madoScore(flags), timeoutMs, out };
+    }
+    if (action === 'click') {
+        rejectMadoFlags(flags, ['action', 'target', 'x', 'y', 'route', 'expected-hash', 'out']);
+        const route = requireString(flags, 'route');
+        if (route !== 'system' && route !== 'window-message' && route !== 'process-directed') {
+            usage('--route must be system, window-message or process-directed');
+        }
+        const expectedHash = requireString(flags, 'expected-hash');
+        if (!/^[a-f0-9]{64}$/.test(expectedHash))
+            usage('--expected-hash must be the image_hash returned by mado capture');
+        return { command: 'mado', action, target, x: requireInt(flags, 'x', { min: 0 }), y: requireInt(flags, 'y', { min: 0 }), route, expectedHash, out };
+    }
+    usage(`unknown mado action "${action}"`);
 }
 function requireInt(flags, name, opts = {}) {
     const n = getInt(flags, name, opts);
@@ -176,6 +235,8 @@ function buildInvocation(command, flags) {
         case 'apps':
         case 'doctor':
             return { command };
+        case 'mado':
+            return madoInvocation(flags);
         case 'get-state': {
             const app = getInt(flags, 'app', { min: 1 });
             const out = getString(flags, 'out');

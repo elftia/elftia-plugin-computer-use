@@ -25,6 +25,7 @@ const ALLOWED_FILES = new Set([
   'scripts/dist-layout.mjs',
   'scripts/verify-dist.mjs',
   'scripts/verify-layout.mjs',
+  'scripts/install-mado-native.mjs',
   'tests/build-dist.test.ts',
   'tests/smoke.test.ts',
   'tests/plugin.test.ts',
@@ -47,6 +48,7 @@ const SKIP_DIRS = new Set([
 function walk(dir) {
   const found = [];
   for (const entry of readdirSync(dir)) {
+    if (entry === '.git') continue; // linked worktrees use a .git file
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
       if (!SKIP_DIRS.has(entry)) found.push(...walk(full));
