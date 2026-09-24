@@ -178,8 +178,6 @@ capture. Also use it when health fails, window discovery is ambiguous, or the
 target application does not support MadoPilot input. An uncertain or partially
 submitted MadoPilot click must be verified before any fallback input.
 
-## Coordinates and scaling
-
 ## Bounded observation and cropping
 
 - Prefer a screenshot of the target window over a full desktop image. Keep the
