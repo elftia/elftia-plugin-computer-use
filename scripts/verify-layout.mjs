@@ -20,7 +20,12 @@ const ALLOWED_FILES = new Set([
   'package-lock.json',
   'vitest.config.ts',
   'skills/computer-use/SKILL.md',
+  'scripts/atomic-tree-swap.mjs',
+  'scripts/build-dist.mjs',
+  'scripts/dist-layout.mjs',
+  'scripts/verify-dist.mjs',
   'scripts/verify-layout.mjs',
+  'tests/build-dist.test.ts',
   'tests/smoke.test.ts',
   'tests/plugin.test.ts',
   'tests/skill.test.ts',
@@ -29,7 +34,15 @@ const ALLOWED_FILES = new Set([
 
 const REQUIRED_FILES = [...ALLOWED_FILES].filter((f) => f !== 'package-lock.json');
 
-const SKIP_DIRS = new Set(['.git', 'node_modules', 'coverage']);
+const SKIP_DIRS = new Set([
+  '.computer-use',
+  '.elftia-work',
+  '.git',
+  'coverage',
+  'dist',
+  'node_modules',
+  'release',
+]);
 
 function walk(dir) {
   const found = [];

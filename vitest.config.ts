@@ -7,5 +7,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // The atomic-tree tests copy and hash the complete skill into an OS temp
+    // directory. Windows filesystem filters can make that exceed Vitest's
+    // browser-oriented 5 second default without indicating a deadlock.
+    testTimeout: 120_000,
   },
 });

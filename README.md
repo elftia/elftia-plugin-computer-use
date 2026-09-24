@@ -1,42 +1,56 @@
 # elftia-plugin-computer-use
 
 An [Elftia](https://elftia.com) `kind: agent` plugin that teaches agents to
-operate a real desktop through the **`computer-use` CLI** — plus a
-ready-made **Desktop Operator** agent package that uses it.
+operate a real desktop through the **`computer-use` CLI**.
 
-The plugin is pure data: one agent package (`Desktop Operator`), one
-agent-agnostic skill (`computer-use`). No executable code, no renderer/main
-halves, zero changes to the Elftia host.
+The plugin contributes one agent-agnostic skill (`computer-use`) and no agent
+persona. The CLI runtime is vendored inside that skill; there are no
+renderer/main halves and no changes to the Elftia host.
 
-## Prerequisite: the computer-use CLI
+## Included computer-use CLI
 
-This plugin drives the separate `computer-use` CLI
-(repo `elftia-computer-use`, npm `bin`). Install that first and make sure it
-is on `PATH`. Verify with:
+The CLI ships inside `skills/computer-use/scripts/`. No global CLI install or
+sibling `elftia-computer-use` checkout is required. Verify the shipped runtime
+with:
 
 ```bash
-computer-use doctor
+node "<installed-skill-directory>/scripts/cli.js" doctor
 ```
 
-The skill and the agent both refuse to operate the desktop when `doctor`
-fails. Platform support matches the CLI: **Windows first**; on macOS/Linux
-the CLI exits non-zero with a clear "not yet supported on \<os\>" error.
+The skill requires a successful `doctor` check before operating the desktop.
+Platform support matches the CLI: **Windows first**; on macOS/Linux the CLI
+exits non-zero with a clear "not yet supported on \<os\>" error.
 
 ## What's inside
 
 ```
 elftia-plugin.json                     # kind:agent manifest, one bindable skill contribution
 skills/
-  computer-use/SKILL.md                # the agent-agnostic skill (frozen v0.5 CLI vocabulary)
+  computer-use/
+    SKILL.md                            # the agent-agnostic skill (frozen v0.5 CLI vocabulary)
+    package.json                        # vendored CLI version marker
+    scripts/                            # self-contained computer-use CLI runtime
 ```
 
 ## Install into Elftia
 
-Copy this repository (or just the plugin folder) into the Elftia plugins
-root so it sits at `~/.elftia/plugins/elftia-plugin-computer-use/` with
-`elftia-plugin.json` at the top of that folder, then restart Elftia. The
-plugin appears in the plugin manager and the **computer-use** skill becomes
-available in the skill library, ready to attach to any agent.
+Build the install tree, then select **`dist/computer-use/`** in Elftia's
+"install from folder" development flow:
+
+```bash
+npm run build
+```
+
+For distribution, use `npm run release` and give users the matching pair from
+`release/0.8.1/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
+container) plus its external
+`computer-use.json` integrity sidecar. Do not install the repository root;
+source, tests and development dependencies are deliberately outside the
+install tree.
+
+After installation, the plugin appears in the plugin manager and the
+**computer-use** skill becomes available in the skill library, ready to attach
+to any agent.
 
 Not installed = the capability does not exist. That is deliberate.
 
@@ -68,10 +82,14 @@ text-only models work through a vision-description tool such as Elftia's
 
 `skills/computer-use/SKILL.md` is agent-agnostic (CC-compatible
 frontmatter). To use it from Claude Code or any skills-compatible agent,
-copy the skill directory into that agent's skills location:
+copy the whole skill directory (including its vendored `scripts/`) into that
+agent's skills location:
 
 ```
-<skills-dir>/computer-use/SKILL.md
+<skills-dir>/computer-use/
+  SKILL.md
+  package.json
+  scripts/
 ```
 
 The skill's core loop needs only a shell tool (to run the CLI) and a way to
@@ -85,8 +103,8 @@ Real-machine control is opt-in at every layer:
 1. **Opt-in install** — nothing is present until you install the plugin.
 2. **Permission-gated actions** — `permissionMode: "default"`, no
    auto-allow hooks; every CLI invocation is approvable command by command.
-3. **Minimal tool surface** — `allowedTools` is exactly `Bash` + `Read`;
-   no file-writing tools.
+3. **Minimal runtime surface** — one skill plus its vendored CLI; no agent
+   package and no main or renderer contribution.
 4. **Mandatory safety discipline** — the skill's safety section is
    test-pinned content: destructive-action confirmation, never
    auto-accepting system dialogs, credential handling, kill-switch
@@ -99,10 +117,16 @@ Real-machine control is opt-in at every layer:
 
 ```bash
 npm install
+npm run build   # atomically publish the whitelist-only dist/computer-use tree
 npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
-npm run verify  # lint + test + layout walk (no strays outside the declared layout)
+npm run verify  # lint + test + source layout + build + shipped-byte parity
+npm run release # release/0.8.1/computer-use.epkg + external computer-use.json
 ```
+
+Producer tooling comes from the published `@elftia/plugin-kit` package on the
+public npm registry. It does not resolve tooling from a sibling Elftia
+checkout or a parent `node_modules` directory.
 
 The repo is English-only in all agent-facing content (SKILL.md, system
 prompt, manifest strings) — enforced by test. Git: work happens on `dev`;

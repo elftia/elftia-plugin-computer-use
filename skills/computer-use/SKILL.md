@@ -32,8 +32,8 @@ step down that gradient that you can take, you should.
 
 ## Prerequisites
 
-- The `computer-use` CLI must be installed and on PATH (it is a separate
-  tool, not part of this skill).
+- The `computer-use` CLI is vendored inside this skill's `scripts/` directory.
+  Use the invocation below; no global install or PATH entry is required.
 - Platform: Windows. On macOS/Linux the commands exit non-zero with a clear
   "not yet supported on <os>" JSON error — report that, do not improvise.
 

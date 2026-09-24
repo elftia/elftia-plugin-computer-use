@@ -11,7 +11,16 @@ import globals from 'globals';
 export default [
   // Vendored CLI build (compiled JS output of the elftia-computer-use repo;
   // linted at ITS source, not here).
-  { ignores: ['skills/computer-use/scripts/**', 'skills/computer-use/package.json'] },
+  {
+    ignores: [
+      '.computer-use/**',
+      'dist/**',
+      'release/**',
+      'skills/computer-use/scripts/**',
+      'skills/computer-use/package.json',
+      'vendor/**',
+    ],
+  },
   js.configs.recommended,
   {
     // The vitest suite (.ts run through esbuild — no tsconfig project here,
