@@ -38,6 +38,9 @@ describe('elftia-plugin.json', () => {
     expect(entries[0].id).not.toBe('');
     expect(typeof entries[0].path).toBe('string');
     expect(entries[0].path).not.toBe('');
+    // Elftia also ships a toolkit skill named "computer-use". A distinct
+    // runtime name prevents a same-priority collision that hides both skills.
+    expect(entries[0].displayName).toBe('Computer Use CLI');
     // §25.9: recommendedAudience only PRE-SELECTS a UI choice. It must never
     // be able to force visibility — assert the manifest names no local agent
     // id and creates no binding authority of its own.

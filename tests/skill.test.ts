@@ -90,7 +90,7 @@ describe('SKILL.md frontmatter', () => {
     const frontmatter = skillText.slice(4, end);
     const name = frontmatter.match(/^name:\s*(.+)$/m)?.[1]?.trim();
     const description = frontmatter.match(/^description:\s*(.+)$/m)?.[1]?.trim();
-    expect(name).toBe('computer-use');
+    expect(name).toBe('computer-use-cli');
     expect(description).toBeTruthy();
     expect(description!.length).toBeGreaterThan(40);
   });

@@ -1,6 +1,6 @@
 ---
-name: computer-use
-description: Operate a desktop computer's GUI through the computer-use CLI when a task needs real screen interaction — clicking buttons and menus, filling forms and dialogs, reading what an app shows, scrolling content, or automating software that has no API. Use when the user asks to control, drive, or operate the desktop, interact with a GUI application, or automate clicking and typing. Always prefer an API, CLI, or other headless path first; fall back to screen-level automation only when nothing programmatic exists.
+name: computer-use-cli
+description: Operate a desktop computer's GUI through the computer-use CLI when a task needs real screen interaction — clicking buttons and menus, filling forms and dialogs, reading what an app shows, scrolling content, or automating software that has no API. Use when the user asks to control, drive, or operate the desktop, interact with a GUI application, or automate clicking and typing. Prefer MadoPilot native capture, OCR and frame-bound clicks when its health check succeeds and a unique target window is available. Always prefer an API, CLI, or other headless path first; fall back to screen-level automation only when nothing programmatic exists.
 ---
 
 # Computer Use — desktop operation via the `computer-use` CLI
@@ -47,25 +47,32 @@ If any check fails (permissions, screenshot, input round-trip), report the
 failure output to the user and stop. A broken tool must not drive a real
 machine.
 
+Then run `computer-use mado --action health` once. If it returns `ok: true`,
+prefer the MadoPilot route below for a uniquely identified application window.
+Use its OCR only when `ocr_ready: true`. If MadoPilot is unavailable or no
+unique target can be selected, continue with the core commands; do not treat
+MadoPilot as a prerequisite for desktop operation.
+
 ## Core discipline: the perception-action loop
 
 You cannot see the screen unless you look. The loop is mandatory:
 
-1. **Perceive** — run `computer-use get-state` (writes `state.json` +
-   `screen.png`) or `computer-use screenshot`. Read the result before
-   doing anything.
+1. **Perceive** — for an available MadoPilot target, run `mado capture` and
+   read its PNG; use `mado read-text` for on-screen text. Otherwise run
+   `computer-use get-state` (writes `state.json` + `screen.png`) or
+   `computer-use screenshot`. Read the result before doing anything.
 2. **Decide** — state in one line what you see and the single next action.
 3. **Act** — exactly ONE action: one click, one `type`, one `key` combo,
    one `scroll`, or one `drag`. Never more than one.
-4. **Verify** — take a fresh screenshot (pass `--shot` to the action
-   command, or run `computer-use screenshot`) and confirm the screen
-   changed the way you intended. Only then loop back to step 1.
+4. **Verify** — inspect MadoPilot's newer `after` frame when available, or
+   run a fresh `mado capture`. For a core action, pass `--shot` or run
+   `computer-use screenshot`. Confirm the intended change before looping.
 
 Never act blind. Never stack actions without looking between them. If the
 result surprises you, stop and re-perceive — do not "retry harder".
 
-**Prefer element addressing over raw pixels**: when a `state.json` from a
-prior `get-state` is available, click via `--state <state.json>
+**For core clicks, prefer element addressing over raw pixels**: when a
+`state.json` from a prior `get-state` is available, click via `--state <state.json>
 --element <idx>` instead of `--x/--y` coordinates — the CLI rescales the
 element's coordinates against the live window bounds for you.
 
@@ -122,17 +129,21 @@ Reading the JSON contract:
   and read the file — never expect image bytes on stdout.
 - `state.json` from `get-state` carries the active window, cursor position,
   screen dimensions, screenshot path+dims, and an optional UIA tree summary.
-- Do not invent commands or flags beyond the block above; if something you
-  need is missing, check the optional MadoPilot section below before reporting it.
+- Do not invent commands or flags beyond this block and the MadoPilot block
+  below. Choose the MadoPilot route first when it can perform the operation.
 
-## Optional MadoPilot native enhancement
+## Preferred MadoPilot native route
 
 The vendored CLI supports `mado` when a native bundle is installed beside its
 scripts. The bundle includes the MadoPilot sidecar, OpenCV, ONNX Runtime and
 RapidOCR models; the CLI finds these automatically. Explicit absolute paths in
 `ELFTIA_MADO_PILOT_SIDECAR`, `ELFTIA_MADO_PILOT_MODEL_ROOT` and
-`ELFTIA_MADO_PILOT_RUNTIME_PATH` can override the bundle. Run
-`computer-use mado --action health` after the normal `doctor` check.
+`ELFTIA_MADO_PILOT_RUNTIME_PATH` can override the bundle. After `doctor`, run
+`computer-use mado --action health`, then `list-targets` and select exactly
+one target. Prefer `capture` over core screenshots for that window, `read-text`
+over a vision guess for text, and `find-template` or `wait-template` when a
+real template PNG is available. Use MadoPilot's frame-bound `click` for a
+single primary-button click on that target.
 
 ```
 computer-use mado --action list-targets
@@ -152,16 +163,42 @@ MadoPilot coordinates are relative to the captured image, whereas core `click`
 coordinates are screen-global. One MadoPilot click sends one primary-button
 sequence tied to a fresh frame and returns a newer capture when available. If
 `after_available` is false, capture again to inspect the application effect.
+Use the newest `capture.image_hash` for a click. Never reuse coordinates from
+a resized image without mapping them back to capture pixels. If the hash is
+stale, capture again and replan; do not blindly resend the input.
 The `window-message` route can submit to a window without activating its child
 controls; prefer the route that works for the target application. If input
 fails, stop and inspect the screen;
 partial native submission must not be retried automatically. Preserve the core
 perception-action and safety rules above.
 
+Use the core CLI for tasks MadoPilot cannot perform: typing, keyboard shortcuts,
+scrolling, dragging, multi-button clicks, UIA element addressing, or full-desktop
+capture. Also use it when health fails, window discovery is ambiguous, or the
+target application does not support MadoPilot input. An uncertain or partially
+submitted MadoPilot click must be verified before any fallback input.
+
 ## Coordinates and scaling
 
-- All coordinates are **screen-global pixels** (origin top-left), not
-  window-relative.
+## Bounded observation and cropping
+
+- Prefer a screenshot of the target window over a full desktop image. Keep the
+  original desktop screenshot separately when the user's task is to send that file.
+- Usually make at most two crops of one observation. The CLI enforces a hard
+  limit of three attempts per source-image content in the current workspace,
+  shared across CLI processes and independent of filenames or `--out`.
+- After the third attempt, switch to a target-window screenshot, `uia-tree`,
+  or a genuinely changed observation. Do not keep shifting nearly identical
+  rectangles, copy/rename the image to reset the counter, or crop a crop to
+  continue the same unsuccessful inspection. If none provides new evidence,
+  report the blocker instead of guessing coordinates.
+- Always read the crop path returned in JSON. Crops have unique filenames;
+  never assume a fixed `crop.png` or overwrite an earlier observation.
+
+## Coordinates and scaling
+
+- Core CLI click coordinates are **screen-global pixels** (origin top-left).
+  MadoPilot click coordinates are pixels in its captured target image.
 - The `width`/`height` in screenshot JSON are the **actual PNG dimensions**.
   If your visual input was scaled (common with `--max-edge` or a model-side
   resize), rescale your coordinates before acting:
@@ -174,17 +211,17 @@ perception-action and safety rules above.
 
 ## Perception: reading the screen (agent-agnostic)
 
-Both branches use the same action vocabulary above; only how you LOOK
-differs.
+Both branches use the same perception-action discipline; how you LOOK depends
+on the model and on whether MadoPilot can inspect the target window.
 
 - **Multimodal agents**: Read the screenshot file path directly as an
-  image input (the path from `get-state`/`screenshot` JSON). This is the
+  image input (the path from `mado capture` or core screenshot JSON). This is the
   best branch — you see the actual pixels.
 - **Text-only agents**: pass the screenshot path to a vision description
   tool and work from its output (in Elftia TinyElf that tool is
   `view_image`). Slower and coarser — compensate with more frequent
-  verification and heavier use of `state.json`/`uia-tree` text, which you
-  can read natively.
+  verification and heavier use of MadoPilot `read-text` when OCR is ready,
+  or `state.json`/`uia-tree` text on the core path.
 
 **Preferred text-only path in Elftia TinyElf: the `vision` subagent.** When
 your session model cannot see images, Elftia offers a builtin `vision`
@@ -210,11 +247,11 @@ When using a vision description tool, respect a strict division of labor —
   preview visible above the input box". Vision models hallucinate pixel
   coordinates almost universally — never ask for or trust coordinates
   from them.
-- Coordinates come from STRUCTURAL sources only: `uia-tree` elements
-  (real BoundingRectangle bounds), `state.json` elements, or `apps`
-  window bounds. Standard pattern: vision names the element (by its
-  title) → find that element in `uia-tree`/`state.json` → click the
-  center of its real bounds (`click --state <file> --element <idx>`).
+- Coordinates come from grounded sources only: MadoPilot OCR/template boxes
+  tied to a captured frame, `uia-tree` elements (real BoundingRectangle
+  bounds), `state.json` elements, or `apps` window bounds. On the core path,
+  vision names the element → find it in `uia-tree`/`state.json` → click its
+  real bounds (`click --state <file> --element <idx>`).
 
 Two more patterns that materially raise accuracy:
 
@@ -260,6 +297,23 @@ pressure:
   when it matters (e.g. the user just copied something they need).
 
 ## Recipes
+
+### Inspect a window with MadoPilot first
+
+```text
+computer-use doctor
+computer-use mado --action health
+computer-use mado --action list-targets      # choose one exact target id
+computer-use mado --action capture --target <id>  # read PNG and image_hash
+computer-use mado --action read-text --target <id> # if OCR is ready
+computer-use mado --action capture --target <id>  # fresh hash before a click
+computer-use mado --action click --target <id> --x <capture-pixel> --y <capture-pixel> --route system|window-message|process-directed --expected-hash <fresh image_hash>
+computer-use mado --action capture --target <id>  # verify the effect
+```
+
+Choose coordinates only from the target's captured pixels or grounded
+OCR/template geometry. Do not click if the selected window or frame changed.
+The following recipes use core commands for operations MadoPilot lacks.
 
 ### Open an app and click a specific button
 

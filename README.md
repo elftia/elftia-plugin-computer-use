@@ -3,7 +3,7 @@
 An [Elftia](https://elftia.com) `kind: agent` plugin that teaches agents to
 operate a real desktop through the **`computer-use` CLI**.
 
-The plugin contributes one agent-agnostic skill (`computer-use`) and no agent
+The plugin contributes one agent-agnostic skill (`computer-use-cli`) and no agent
 persona. The CLI runtime is vendored inside that skill; there are no
 renderer/main halves and no changes to the Elftia host.
 
@@ -21,8 +21,11 @@ The skill requires a successful `doctor` check before operating the desktop.
 Platform support matches the CLI: **Windows first**; on macOS/Linux the CLI
 exits non-zero with a clear "not yet supported on \<os\>" error.
 
-The vendored CLI also exposes an optional `mado` command for MadoPilot window
-capture, template matching, OCR and frame-bound clicking. When a native bundle
+The vendored CLI also exposes a `mado` command for MadoPilot window
+capture, template matching, OCR and frame-bound clicking. The skill prefers
+these native operations for a uniquely identified window when health succeeds.
+Core commands cover typing, scrolling, other unsupported actions and fallback.
+When a native bundle
 is present in `skills/computer-use/scripts/native/`, it is discovered without
 environment variables. Run
 `node "<installed-skill-directory>/scripts/cli.js" mado --action health`.
@@ -55,14 +58,14 @@ npm run build
 ```
 
 For distribution, use `npm run release` and give users the matching pair from
-`release/0.8.2/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
+`release/0.8.4/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
 container) plus its external
 `computer-use.json` integrity sidecar. Do not install the repository root;
 source, tests and development dependencies are deliberately outside the
 install tree.
 
 After installation, the plugin appears in the plugin manager and the
-**computer-use** skill becomes available in the skill library, ready to attach
+**computer-use-cli** skill becomes available in the skill library, ready to attach
 to any agent.
 
 Not installed = the capability does not exist. That is deliberate.
@@ -134,7 +137,7 @@ npm run build   # atomically publish the whitelist-only dist/computer-use tree
 npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
 npm run verify  # lint + test + source layout + build + shipped-byte parity
-npm run release # release/0.8.2/computer-use.epkg + external computer-use.json
+npm run release # release/0.8.4/computer-use.epkg + external computer-use.json
 ```
 
 Producer tooling comes from the published `@elftia/plugin-kit` package on the
