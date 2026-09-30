@@ -26,6 +26,7 @@ const ALLOWED_FILES = new Set([
   'scripts/verify-dist.mjs',
   'scripts/verify-layout.mjs',
   'scripts/install-mado-native.mjs',
+  'scripts/install-cua-sdk.mjs',
   'tests/build-dist.test.ts',
   'tests/smoke.test.ts',
   'tests/plugin.test.ts',

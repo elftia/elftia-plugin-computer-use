@@ -57,12 +57,22 @@ Build the install tree, then select **`dist/computer-use/`** in Elftia's
 npm run build
 ```
 
-For distribution, use `npm run release` and give users the matching pair from
-`release/0.8.4/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
+For distribution, `npm run release` produces the matching pair from
+`release/<version>/`: `computer-use.epkg` (an Elftia plugin package using a ZIP
 container) plus its external
 `computer-use.json` integrity sidecar. Do not install the repository root;
 source, tests and development dependencies are deliberately outside the
 install tree.
+
+Since 0.9.0 the skill ships the Cua Driver SDK runtime inside
+`skills/computer-use/scripts/node_modules/` (installed on the build machine
+via `npm run install:cua-sdk`). The official `elftia-plugin release` command
+still REJECTS node_modules in the install tree, so the epkg channel for the
+Cua-enabled build is blocked until the packaging policy lands (Phase 3 of the
+Cua integration plan, `docs/research/cua-driver-integration-plan.md` in the
+main repository). Until then `npm run verify` stops after `verify:dist`, and
+local installs should use the `dist/computer-use` tree via the plugin
+manager's install-from-directory flow.
 
 After installation, the plugin appears in the plugin manager and the
 **computer-use-cli** skill becomes available in the skill library, ready to attach
@@ -136,8 +146,9 @@ npm install
 npm run build   # atomically publish the whitelist-only dist/computer-use tree
 npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
+npm run install:cua-sdk  # vendor @trycua/cua-driver runtime into the skill tree
 npm run verify  # lint + test + source layout + build + shipped-byte parity
-npm run release # release/0.8.4/computer-use.epkg + external computer-use.json
+npm run release # epkg (blocked while node_modules ships in-tree; see above)
 ```
 
 Producer tooling comes from the published `@elftia/plugin-kit` package on the

@@ -13,6 +13,8 @@ export const COMMAND_NAMES = [
     'uia-tree',
     'doctor',
     'mado',
+    'cua',
+    'cua-serve',
 ];
 const VALUE_FLAGS = {
     apps: [],
@@ -27,6 +29,8 @@ const VALUE_FLAGS = {
     'uia-tree': ['app', 'max-depth', 'out'],
     doctor: [],
     mado: ['action', 'target', 'template', 'min-score', 'timeout-ms', 'x', 'y', 'route', 'expected-hash', 'out'],
+    cua: ['action', 'args', 'session'],
+    'cua-serve': ['host', 'port'],
 };
 const BOOL_FLAGS = {
     apps: [],
@@ -41,6 +45,8 @@ const BOOL_FLAGS = {
     'uia-tree': [],
     doctor: [],
     mado: [],
+    cua: [],
+    'cua-serve': [],
 };
 function usage(message) {
     throw new CliError('EUSAGE', message);
@@ -237,6 +243,37 @@ function buildInvocation(command, flags) {
             return { command };
         case 'mado':
             return madoInvocation(flags);
+        case 'cua': {
+            const action = requireString(flags, 'action');
+            if (action === '') {
+                usage('option --action must not be empty');
+            }
+            const args = getString(flags, 'args');
+            if (args !== undefined) {
+                try {
+                    const parsed = JSON.parse(args);
+                    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                        usage('--args must be a JSON object');
+                    }
+                }
+                catch {
+                    usage('--args must be a JSON object');
+                }
+            }
+            const session = getString(flags, 'session') ?? 'elftia';
+            if (!/^[\w.-]{1,64}$/.test(session)) {
+                usage('--session must be 1-64 of [A-Za-z0-9_.-]');
+            }
+            return { command, action, args, session };
+        }
+        case 'cua-serve': {
+            const host = getString(flags, 'host') ?? '127.0.0.1';
+            if (host !== '127.0.0.1' && host !== 'localhost' && host !== '::1') {
+                usage('--host must be 127.0.0.1, localhost or ::1 (cua-serve binds loopback only)');
+            }
+            const port = getInt(flags, 'port', { min: 0, max: 65535 }) ?? 0;
+            return { command, host, port };
+        }
         case 'get-state': {
             const app = getInt(flags, 'app', { min: 1 });
             const out = getString(flags, 'out');

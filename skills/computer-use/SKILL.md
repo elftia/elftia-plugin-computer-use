@@ -1,6 +1,6 @@
 ---
 name: computer-use-cli
-description: Operate a desktop computer's GUI through the computer-use CLI when a task needs real screen interaction — clicking buttons and menus, filling forms and dialogs, reading what an app shows, scrolling content, or automating software that has no API. Use when the user asks to control, drive, or operate the desktop, interact with a GUI application, or automate clicking and typing. Prefer MadoPilot native capture, OCR and frame-bound clicks when its health check succeeds and a unique target window is available. Always prefer an API, CLI, or other headless path first; fall back to screen-level automation only when nothing programmatic exists.
+description: Operate a desktop computer's GUI through the computer-use CLI when a task needs real screen interaction — clicking buttons and menus, filling forms and dialogs, reading what an app shows, scrolling content, or automating software that has no API. Use when the user asks to control, drive, or operate the desktop, interact with a GUI application, or automate clicking and typing. Prefer the Cua Driver route (semantic element tokens, background input that never steals focus) when its health check succeeds; use MadoPilot for OCR and template perception; fall back to the core PowerShell commands otherwise. Always prefer an API, CLI, or other headless path first; fall back to screen-level automation only when nothing programmatic exists.
 ---
 
 # Computer Use — desktop operation via the `computer-use` CLI
@@ -47,20 +47,24 @@ If any check fails (permissions, screenshot, input round-trip), report the
 failure output to the user and stop. A broken tool must not drive a real
 machine.
 
-Then run `computer-use mado --action health` once. If it returns `ok: true`,
-prefer the MadoPilot route below for a uniquely identified application window.
-Use its OCR only when `ocr_ready: true`. If MadoPilot is unavailable or no
-unique target can be selected, continue with the core commands; do not treat
-MadoPilot as a prerequisite for desktop operation.
+Then run `computer-use cua --action health` once. If it returns `ok: true`,
+the Cua Driver route below is the PREFERRED execution backend for every GUI
+action in this session. Also run `computer-use mado --action health`: when it
+returns `ok: true`, MadoPilot is the preferred perception supplement (OCR,
+template matching) — but never the preferred input route. If Cua health fails,
+fall back to MadoPilot perception plus core commands; do not treat either as a
+prerequisite for desktop operation.
 
 ## Core discipline: the perception-action loop
 
 You cannot see the screen unless you look. The loop is mandatory:
 
-1. **Perceive** — for an available MadoPilot target, run `mado capture` and
-   read its PNG; use `mado read-text` for on-screen text. Otherwise run
-   `computer-use get-state` (writes `state.json` + `screen.png`) or
-   `computer-use screenshot`. Read the result before doing anything.
+1. **Perceive** — when the Cua route is healthy, run `cua get_window_state`
+   for the element tree plus window screenshot and read both. For OCR /
+   template evidence, use MadoPilot `capture` and `read-text` on a selected
+   target. Otherwise run `computer-use get-state` (writes `state.json` +
+   `screen.png`) or `computer-use screenshot`. Read the result before doing
+   anything.
 2. **Decide** — state in one line what you see and the single next action.
 3. **Act** — exactly ONE action: one click, one `type`, one `key` combo,
    one `scroll`, or one `drag`. Never more than one.
@@ -129,10 +133,94 @@ Reading the JSON contract:
   and read the file — never expect image bytes on stdout.
 - `state.json` from `get-state` carries the active window, cursor position,
   screen dimensions, screenshot path+dims, and an optional UIA tree summary.
-- Do not invent commands or flags beyond this block and the MadoPilot block
-  below. Choose the MadoPilot route first when it can perform the operation.
+- Do not invent commands or flags beyond this block, the Cua route block and
+  the MadoPilot block. Choose the Cua route first when healthy; MadoPilot for
+  perception; core commands as the fallback.
 
-## Preferred MadoPilot native route
+## Preferred Cua Driver route
+
+When `computer-use cua --action health` returns `ok: true`, route every GUI
+task through the Cua Driver SDK first. It drives Windows UIA semantically
+(element tokens, not pixels), delivers input in the BACKGROUND without
+stealing the user's foreground focus, and reports an honest per-action effect
+level. Routing priority, best first:
+
+0. API / CLI / file / other headless path — unchanged, always first (see the
+   gradient at the top of this skill)
+1. User's own Chrome for web page tasks — belongs to browser tooling, not this
+   skill's Cua route
+2. Cua semantic path: `get_window_state` for the tree + screenshot, then
+   element_token actions (`click`, `type_text`, `set_value`, `invoke_menu`, ...)
+3. Cua browser path (`get_browser_state` + `browser_*`) only when the user's
+   own browser cannot be attached (Electron / WebView2 apps)
+4. MadoPilot perception: `capture`, `read-text` (OCR), `find-template` /
+   `wait-template` — reading evidence, never execution
+5. Cua pixel path: `capture`-bound x,y background clicks — LAST choice within
+   Cua (see `background_unavailable` below)
+6. Cua desktop path: `get_desktop_state` + desktop target — only for explicit
+   whole-screen tasks the user asked for
+7. Fallback: the core PowerShell commands below — only when the Cua route is
+   unhealthy or rejects the action; say why you degraded
+
+Rules for the Cua route:
+
+- **One action per step, always against a fresh snapshot.** Get
+  `get_window_state`, pick the element, act once, then verify (fresh
+  `get_window_state`, `verify_state` predicates, or a Mado capture).
+- **element_token beats pixels.** Elements carry stable tokens
+  (`snapshot_id:element_index`). A token goes stale after a new snapshot —
+  the error `element_token is stale; call get_window_state again to refresh`
+  means re-snapshot and replan, never resend.
+- **Sessions bind everything.** The CLI always attaches a session label
+  (default `elftia`; `--session` to override). Reuse one label per task.
+- **One-shot vs server.** `computer-use cua --action <tool>` creates and
+  destroys a driver per invocation — snapshot ids and element_tokens DO NOT
+  survive between one-shot calls. For any multi-step task, start the
+  long-lived server once and reuse it:
+
+```
+computer-use cua-serve          # prints {url, token, pid}, then keeps running
+curl -s --noproxy '*' -H "Authorization: Bearer <token>" <url>/health
+curl -s --noproxy '*' -X POST -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{"action":"get_window_state","args":{"pid":<pid>,"window_id":<id>,"include_screenshot":true,"screenshot_out_file":"<abs path.png>"}}' \
+     <url>/call
+# ... more /call steps against the same snapshot session ...
+curl -s --noproxy '*' -X POST -H "Authorization: Bearer <token>" -d '{}' <url>/shutdown
+```
+
+- **Background is the default and the boundary.** `delivery_mode:
+  "background"` never takes the user's focus. NEVER escalate to
+  `delivery_mode:"foreground"` (visible takeover of mouse/keyboard) without
+  the user's explicit go-ahead; if a background action is refused, degrade
+  the route instead.
+- **`background_unavailable` is honest, not retriable.** A background pixel
+  click can be refused because the UIA provider is busy (a hung provider in
+  ANY app holds a process-wide gate). No input was sent. Do NOT retry the
+  same pixel action; switch to element_token actions, or fall back to Mado
+  template input / core commands.
+- **Coordinates are window-local in Cua calls** (`frame` in the element tree
+  / capture pixels). Never mix them with the core commands' screen-global
+  pixels or Mado capture pixels — one coordinate system per action.
+
+One-shot form (single actions and health only):
+
+```
+computer-use cua --action health
+computer-use cua --action list-tools
+computer-use cua --action list_windows --args '{}'
+computer-use cua --action get_window_state --args '{"pid":<pid>,"window_id":<id>,"include_screenshot":true}'
+computer-use cua --action click --args '{"pid":<pid>,"window_id":<id>,"element_token":"s00000001:0","delivery_mode":"background"}'
+```
+
+Tool names and argument schemas come from `list-tools` (57 tools in the
+current SDK) — discover, do not memorize.
+
+## MadoPilot perception route (OCR, templates, frame-bound input)
+
+MadoPilot is the PERCEPTION layer beside the Cua route: OCR and image template
+matching against a captured frame. Its `click` is a narrow fallback for when
+the Cua route is unavailable and the core commands cannot address the control.
 
 The vendored CLI supports `mado` when a native bundle is installed beside its
 scripts. The bundle includes the MadoPilot sidecar, OpenCV, ONNX Runtime and
@@ -140,10 +228,11 @@ RapidOCR models; the CLI finds these automatically. Explicit absolute paths in
 `ELFTIA_MADO_PILOT_SIDECAR`, `ELFTIA_MADO_PILOT_MODEL_ROOT` and
 `ELFTIA_MADO_PILOT_RUNTIME_PATH` can override the bundle. After `doctor`, run
 `computer-use mado --action health`, then `list-targets` and select exactly
-one target. Prefer `capture` over core screenshots for that window, `read-text`
-over a vision guess for text, and `find-template` or `wait-template` when a
-real template PNG is available. Use MadoPilot's frame-bound `click` for a
-single primary-button click on that target.
+one target. Prefer `capture` when a Cua window screenshot is not available,
+`read-text` over a vision guess for text, and `find-template` or
+`wait-template` when a real template PNG is available. Combine with Cua: when
+the Cua element tree lacks the text (canvas / custom-drawn apps), read it with
+`read-text` and act with Cua element or pixel actions.
 
 ```
 computer-use mado --action list-targets
@@ -172,11 +261,11 @@ fails, stop and inspect the screen;
 partial native submission must not be retried automatically. Preserve the core
 perception-action and safety rules above.
 
-Use the core CLI for tasks MadoPilot cannot perform: typing, keyboard shortcuts,
-scrolling, dragging, multi-button clicks, UIA element addressing, or full-desktop
-capture. Also use it when health fails, window discovery is ambiguous, or the
-target application does not support MadoPilot input. An uncertain or partially
-submitted MadoPilot click must be verified before any fallback input.
+Use the Cua route for execution and the core CLI for tasks beyond both: typing
+into non-focusable surfaces, keyboard shortcuts, scrolling, dragging,
+multi-button clicks, or full-desktop capture. Also use them when health fails
+or window discovery is ambiguous. An uncertain or partially submitted
+MadoPilot click must be verified before any fallback input.
 
 ## Bounded observation and cropping
 
@@ -296,7 +385,22 @@ pressure:
 
 ## Recipes
 
-### Inspect a window with MadoPilot first
+### Drive a window with the Cua route (multi-step)
+
+```text
+computer-use cua --action health
+computer-use cua-serve                  # note url + token from stdout JSON
+# 1. perceive: window list, then the tree + screenshot (same serve instance!)
+POST /call {"action":"list_windows","args":{}}
+POST /call {"action":"get_window_state","args":{"pid":<pid>,"window_id":<id>,"include_screenshot":true,"screenshot_out_file":"<abs>.png"}}
+# 2. act ONCE with a fresh element_token, background delivery
+POST /call {"action":"click","args":{"pid":<pid>,"window_id":<id>,"element_token":"<s...:n>","delivery_mode":"background"}}
+# 3. verify: fresh snapshot (old tokens are now stale) or verify_state
+POST /call {"action":"get_window_state","args":{"pid":<pid>,"window_id":<id>,"include_screenshot":true}}
+POST /shutdown {}
+```
+
+### Inspect a window with MadoPilot perception
 
 ```text
 computer-use doctor

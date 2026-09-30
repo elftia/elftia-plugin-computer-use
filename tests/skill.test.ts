@@ -174,3 +174,54 @@ describe('SKILL.md required sections', () => {
     expect(prereq.toLowerCase()).toContain('no global install');
   });
 });
+
+describe('SKILL.md Cua Driver route (preferred execution backend)', () => {
+  it('health-checks cua in the prerequisites and ranks it first', () => {
+    const prereq = section(/## Prerequisites/);
+    expect(prereq).toContain('computer-use cua --action health');
+    expect(prereq.toLowerCase()).toContain('preferred execution backend');
+    const cua = section(/## Preferred Cua Driver route/);
+    expect(cua).toContain('route every GUI');
+    expect(cua).toContain('element_token');
+    expect(cua).toContain('background_unavailable');
+    expect(cua).toContain('delivery_mode');
+  });
+
+  it('teaches the full routing priority 0-7 with Mado as perception only', () => {
+    const cua = section(/## Preferred Cua Driver route/);
+    for (const marker of [
+      '0. API / CLI / file / other headless path',
+      '2. Cua semantic path',
+      '4. MadoPilot perception',
+      '5. Cua pixel path',
+      '7. Fallback',
+    ]) {
+      expect(cua).toContain(marker);
+    }
+    expect(cua).toMatch(/reading evidence, never execution|perception/i);
+    const mado = section(/## MadoPilot perception route/);
+    expect(mado.toLowerCase()).toContain('perception');
+    expect(mado).not.toMatch(/preferred (execution|input)/i);
+  });
+
+  it('teaches cua-serve for multi-step work plus the token staleness rule', () => {
+    const cua = section(/## Preferred Cua Driver route/);
+    expect(cua).toContain('cua-serve');
+    expect(cua).toContain('/call');
+    expect(cua).toContain('/shutdown');
+    expect(cua).toContain('element_token is stale');
+    expect(cua.toLowerCase()).toContain('foreground');
+  });
+
+  it('carries a one-shot cua command block', () => {
+    const cua = section(/## Preferred Cua Driver route/);
+    const blocks = fencedBlocks(cua);
+    const oneShot = blocks.find((block) =>
+      block.some((line) => line.startsWith('computer-use cua --action health')),
+    );
+    expect(oneShot, 'a fenced block with the one-shot cua forms').toBeDefined();
+    expect(oneShot!.join('\n')).toContain('list-tools');
+    expect(oneShot!.join('\n')).toContain('get_window_state');
+    expect(oneShot!.join('\n')).toContain('element_token');
+  });
+});

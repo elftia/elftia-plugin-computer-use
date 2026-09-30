@@ -264,12 +264,22 @@ export async function validateComputerUseTree(
       `required runtime file missing: ${requiredPath}`,
     );
   }
-  const nodeModulesEntry = inventory.entries.find((entry) =>
-    entry.path.split("/").includes("node_modules"),
-  );
+  // node_modules is allowed ONLY inside the vendored CLI tree, where it
+  // carries the Cua Driver SDK runtime (@trycua/* + @ubjs/*, installed by
+  // scripts/install-cua-sdk.mjs on the build machine). Anywhere else it means
+  // an accidental npm install leaked into the shipped tree.
+  const VENDORED_SCRIPTS_PREFIX = "skills/computer-use/scripts/";
+  const strayNodeModulesEntry = inventory.entries.find((entry) => {
+    if (entry.path.startsWith(VENDORED_SCRIPTS_PREFIX)) return false;
+    const segments = entry.path.split("/");
+    return (
+      segments.includes("node_modules") ||
+      segments[segments.length - 1] === "package-lock.json"
+    );
+  });
   assert(
-    nodeModulesEntry === undefined,
-    `node_modules is forbidden in dist: ${nodeModulesEntry?.path}`,
+    strayNodeModulesEntry === undefined,
+    `node_modules / package-lock.json outside the vendored CLI tree is forbidden in dist: ${strayNodeModulesEntry?.path}`,
   );
   if (expectedInventory !== null) {
     assert(

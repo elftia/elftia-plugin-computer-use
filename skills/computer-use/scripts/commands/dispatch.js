@@ -1,6 +1,7 @@
 import { runApps } from './apps.js';
 import { runClick } from './click.js';
 import { runCrop } from './crop.js';
+import { runCua } from './cua.js';
 import { runDoctor } from './doctor.js';
 import { runDrag } from './drag.js';
 import { runGetState } from './get-state.js';
@@ -36,5 +37,7 @@ export async function dispatch(invocation, deps) {
             return runDoctor(invocation, deps);
         case 'mado':
             return runMado(invocation, deps);
+        case 'cua':
+            return runCua(invocation, deps);
     }
 }
