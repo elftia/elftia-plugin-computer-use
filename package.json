@@ -15,7 +15,9 @@
     "verify:dist": "node scripts/verify-dist.mjs",
     "pack": "elftia-plugin release dist/computer-use --out release",
     "release": "elftia-plugin release dist/computer-use --out release",
-    "verify": "npm run lint && npm test && npm run verify:layout && npm run build && npm run verify:dist"
+    "verify:layout": "node scripts/verify-layout.mjs",
+    "verify:cua-sdk": "node scripts/verify-cua-sdk.mjs",
+    "verify": "npm run lint && npm test && npm run verify:layout && npm run build && npm run verify:dist && npm run verify:cua-sdk"
   },
   "devDependencies": {
     "@elftia/plugin-kit": "0.2.1",

@@ -147,9 +147,17 @@ npm run build   # atomically publish the whitelist-only dist/computer-use tree
 npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
 npm run install:cua-sdk  # vendor @trycua/cua-driver runtime into the skill tree
-npm run verify  # lint + test + source layout + build + shipped-byte parity
+npm run verify  # lint + test + source layout + build + shipped-byte parity + cua-sdk checks
 npm run release # epkg (blocked while node_modules ships in-tree; see above)
 ```
+
+Cua SDK upgrade flow: change the version in `scripts/install-cua-sdk.mjs`
+(`SDK_VERSION`), re-run `npm run install:cua-sdk && npm run verify` (the
+verify chain checks main/native version parity, native payload presence,
+and a live `cua --action health` from the built tree), then re-run the
+Phase 1 agent E2E before releasing. Licenses: `@trycua/cua-driver` and its
+platform native packages are MIT; the AGPL-3.0 `cua-perception` extension
+is explicitly NOT shipped.
 
 Producer tooling comes from the published `@elftia/plugin-kit` package on the
 public npm registry. It does not resolve tooling from a sibling Elftia
