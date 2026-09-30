@@ -162,6 +162,23 @@ level. Routing priority, best first:
 7. Fallback: the core PowerShell commands below — only when the Cua route is
    unhealthy or rejects the action; say why you degraded
 
+Application-class routing (verified on real apps):
+
+- **UWP / Win11 packaged apps** (Calculator, Settings, Sticky Notes): rich
+  UIA tree — launch by AUMID (e.g. `start calculator:`), full element_token
+  flow works, background clicks verified end-to-end.
+- **Custom-drawn surfaces** (QQ and similar IM/game overlays): the Cua tree
+  comes back EMPTY (`degraded: true`) — treat that as the signal to switch
+  perception to Mado `read-text`/templates and act via Cua background pixel
+  actions off a capture, not element tokens.
+- **Electron apps** (VS Code): the browser path refuses them
+  (`browser_route_unavailable: not a recognized browser process`) and their
+  UIA tree may be sparse until Chromium settles — use the semantic path for
+  what it exposes and Mado OCR for the rest.
+- **The user's own Chrome**: Cua's browser path is consent-gated
+  (`browser_consent_required` for an existing profile) — routing rule 1
+  (browser tooling first) is both policy and mechanism.
+
 Rules for the Cua route:
 
 - **One action per step, always against a fresh snapshot.** Get
@@ -283,6 +300,15 @@ MadoPilot click must be verified before any fallback input.
   never assume a fixed `crop.png` or overwrite an earlier observation.
 
 ## Coordinates and scaling
+
+THREE coordinate systems exist in this skill — never carry a coordinate
+across systems:
+
+| System | Origin | Used by |
+| --- | --- | --- |
+| Core screen-global pixels | top-left of the (virtual) desktop | core `click/type/scroll/drag`, `--x/--y` |
+| MadoPilot capture pixels | top-left of the CAPTURED image | `mado click --x/--y`, template boxes |
+| Cua window-local pixels | top-left of the target window's content | Cua `frame` in element trees, capture-bound pixel actions |
 
 - Core CLI click coordinates are **screen-global pixels** (origin top-left).
   MadoPilot click coordinates are pixels in its captured target image.

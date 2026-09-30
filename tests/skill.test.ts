@@ -224,4 +224,17 @@ describe('SKILL.md Cua Driver route (preferred execution backend)', () => {
     expect(oneShot!.join('\n')).toContain('get_window_state');
     expect(oneShot!.join('\n')).toContain('element_token');
   });
+
+  it('documents the three coordinate systems and the verified app-class routing', () => {
+    const coords = section(/## Coordinates and scaling/);
+    expect(coords).toContain('THREE coordinate systems');
+    expect(coords).toContain('Core screen-global pixels');
+    expect(coords).toContain('MadoPilot capture pixels');
+    expect(coords).toContain('Cua window-local pixels');
+    const cua = section(/## Preferred Cua Driver route/);
+    expect(cua).toContain('Application-class routing');
+    expect(cua).toContain('browser_route_unavailable');
+    expect(cua).toContain('browser_consent_required');
+    expect(cua).toMatch(/degraded.*signal|EMPTY/i);
+  });
 });
