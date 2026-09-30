@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CliError } from '../errors.js';
+import { cuaArgsWantForeground, withForegroundNotice } from './foreground-notice.js';
 function importFromNodeModules(nodeModulesDir) {
     // The SDK is ESM-only with a restrictive exports map, so resolve its entry
     // by reading package.json instead of require.resolve (CJS resolution).
@@ -82,7 +83,12 @@ export async function callCuaTool(driver, action, argsJson, defaultSession) {
     if (typeof args.session !== 'string' || args.session.trim() === '') {
         args.session = defaultSession;
     }
-    const raw = (await driver.callTool(action, JSON.stringify(args)));
+    const call = () => driver.callTool(action, JSON.stringify(args));
+    // Foreground delivery takes over the user's real mouse/keyboard — wrap it
+    // in the visibility notice (busy cursor + throttled tray toast).
+    const raw = cuaArgsWantForeground(args)
+        ? await withForegroundNotice(call)
+        : await call();
     let structured;
     if (typeof raw.structuredJson === 'string' && raw.structuredJson !== '') {
         try {

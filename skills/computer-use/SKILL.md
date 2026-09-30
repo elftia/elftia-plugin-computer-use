@@ -116,7 +116,7 @@ computer-use crop --in <png> --region <x1,y1,x2,y2> [--out <dir>]
 computer-use click --x <n> --y <n> [--button left|right|middle] [--double|--triple] [--mods ctrl|shift|alt]
 computer-use click --state <state.json> --element <idx>   # element-index addressing from a prior get-state
 computer-use type --text <s>               # UTF-8 text input via clipboard-paste or SendInput
-computer-use key --combo <ctrl+s>          # key press / combination
+computer-use key --combo <ctrl+s> [--hold-ms <ms>]  # key press / combination; --hold-ms = press-and-HOLD (key-down, dwell, key-up)
 computer-use scroll --x <n> --y <n> --direction up|down|left|right --amount <n>
 computer-use drag --from-x <n> --from-y <n> --to-x <n> --to-y <n>
 computer-use uia-tree [--app <pid>] [--max-depth <n>] [--out <file>]
@@ -408,6 +408,23 @@ pressure:
 - **Clipboard side effect**: `type` inputs text via clipboard-paste when
   available, which OVERWRITES the user's clipboard contents. Mention this
   when it matters (e.g. the user just copied something they need).
+
+## Foreground-operation visibility (automatic)
+
+Any action that drives the REAL mouse or keyboard — core
+`click`/`type`/`key`/`scroll`/`drag`, MadoPilot `--route system`, Cua
+`delivery_mode:"foreground"` — automatically, for the duration of the action:
+
+1. swaps the system arrow cursor to an **arrow+hourglass** cursor, and
+2. fires a **tray toast** ("the agent is taking over the foreground
+   mouse/keyboard"), throttled to at most one toast per ~30 s.
+
+The user's cursor scheme is restored the moment the action ends. The notice
+fails open (an error in it never blocks the input) and a machine can opt out
+with `ELFTIA_CU_FOREGROUND_NOTICE=0`. You do not need to do anything to get
+this — but when you plan a foreground sequence, tell the user the cursor will
+change while the agent is acting. For press-and-HOLD input (in-game walking,
+continuous scrolling, charge meters) use `key --hold-ms <ms>`.
 
 ## Recipes
 

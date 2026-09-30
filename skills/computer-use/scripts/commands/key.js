@@ -5,12 +5,14 @@ export async function runKey(inv, deps) {
         vk: inv.vk,
         extended: inv.extended,
         mods: inv.mods,
+        ...(inv.holdMs === undefined ? {} : { holdMs: inv.holdMs }),
     });
     const after = await maybeAfterShot(deps, inv);
     const payload = {
         ok: true,
         action: 'key',
         combo: inv.combo,
+        ...(inv.holdMs === undefined ? {} : { holdMs: inv.holdMs }),
     };
     if (after !== undefined) {
         payload.after = after;

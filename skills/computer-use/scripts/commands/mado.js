@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CliError } from '../errors.js';
 import { ensureDir, resolveOutDir } from '../out-dir.js';
+import { withForegroundNotice } from './foreground-notice.js';
 const MAX_RESPONSE_BYTES = 1024 * 1024;
 function sidecarRequest(invocation) {
     switch (invocation.action) {
@@ -151,7 +152,12 @@ function invokeSidecar(executable, args, request, timeout, spawnProcess) {
 export async function runMado(invocation, deps, environment = { platform: process.platform, env: process.env, spawnProcess: spawn }) {
     const { executable, modelArgs } = sidecarOptions(environment);
     const outputRoot = ensureDir(resolveOutDir(deps, invocation.out));
-    const data = await invokeSidecar(executable, ['--output-root', outputRoot, ...(invocation.action === 'health' || invocation.action === 'read-text' ? modelArgs : [])], sidecarRequest(invocation), deadlineMs(invocation), environment.spawnProcess);
+    const perform = () => invokeSidecar(executable, ['--output-root', outputRoot, ...(invocation.action === 'health' || invocation.action === 'read-text' ? modelArgs : [])], sidecarRequest(invocation), deadlineMs(invocation), environment.spawnProcess);
+    // The `system` route drives the REAL mouse — wrap it in the foreground
+    // visibility notice (busy cursor + throttled tray toast).
+    const data = invocation.action === 'click' && invocation.route === 'system'
+        ? await withForegroundNotice(perform)
+        : await perform();
     if (invocation.action === 'list-targets') {
         if (!Array.isArray(data))
             throw new CliError('EBACKEND', 'MadoPilot target list was invalid');

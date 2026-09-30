@@ -141,6 +141,9 @@ export class WindowsBackend {
                 if (evt.mods.length > 0) {
                     args.push('-Mods', evt.mods.join(','));
                 }
+                if (evt.holdMs !== undefined) {
+                    args.push('-HoldMs', evt.holdMs);
+                }
                 break;
             case 'scroll':
                 args.push('-X', evt.x, '-Y', evt.y, '-Direction', evt.direction, '-Amount', evt.amount);

@@ -27,7 +27,7 @@ const FROZEN_VOCABULARY: readonly string[] = [
   'computer-use click --x <n> --y <n> [--button left|right|middle] [--double|--triple] [--mods ctrl|shift|alt]',
   'computer-use click --state <state.json> --element <idx>   # element-index addressing from a prior get-state',
   'computer-use type --text <s>               # UTF-8 text input via clipboard-paste or SendInput',
-  'computer-use key --combo <ctrl+s>          # key press / combination',
+  'computer-use key --combo <ctrl+s> [--hold-ms <ms>]  # key press / combination; --hold-ms = press-and-HOLD (key-down, dwell, key-up)',
   'computer-use scroll --x <n> --y <n> --direction up|down|left|right --amount <n>',
   'computer-use drag --from-x <n> --from-y <n> --to-x <n> --to-y <n>',
   'computer-use uia-tree [--app <pid>] [--max-depth <n>] [--out <file>]',
@@ -165,6 +165,15 @@ describe('SKILL.md required sections', () => {
     expect(safety.toLowerCase()).toContain('credential');
     expect(safety.toLowerCase()).toContain('kill switch');
     expect(safety.toLowerCase()).toContain('clipboard');
+  });
+
+  it('documents automatic foreground visibility and hold input', () => {
+    const visibility = section(/## Foreground-operation visibility/);
+    expect(visibility).toContain('arrow+hourglass');
+    expect(visibility).toContain('tray toast');
+    expect(visibility).toContain('ELFTIA_CU_FOREGROUND_NOTICE=0');
+    expect(visibility).toContain('--hold-ms');
+    expect(visibility).toContain('delivery_mode');
   });
 
   it('teaches a doctor-first prerequisite ritual', () => {
