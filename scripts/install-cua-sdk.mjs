@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 
 // Installs the Cua Driver SDK runtime (@trycua/cua-driver + platform native
-// package) into the vendored CLI tree so `cua` / `cua-serve` work from the
-// installed skill. npm runs only on the build machine; end users receive the
-// tree as-is. Mirrors install:mado-native: heavy binaries stay out of git.
+// package) into the plugin's prebuilds channel so `cua` / `cua-serve` work
+// from the installed skill. The vendored CLI resolves the SDK from
+// prebuilds/<platform>-<arch>/node_modules (see its defaultLoadCuaDriver).
+// npm runs only on the build machine; end users receive the tree as-is.
+// Mirrors install:mado-native: heavy binaries stay out of git.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SDK_VERSION = '0.30.4';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const scriptsDir = join(repoRoot, 'skills', 'computer-use', 'scripts');
-const marker = join(scriptsDir, 'node_modules', '@trycua', 'cua-driver', 'package.json');
+const platformTarget = `${process.platform}-${process.arch}`;
+const targetDir = join(repoRoot, 'prebuilds', platformTarget);
+const targetNodeModules = join(targetDir, 'node_modules');
+const marker = join(targetNodeModules, '@trycua', 'cua-driver', 'package.json');
 
 const requested = process.argv[2];
 const version = requested ? requested.replace(/^@?/, '') : SDK_VERSION;
@@ -35,7 +39,7 @@ if (installedVersion() === version) {
   process.exit(0);
 }
 
-console.info(`install:cua-sdk: installing @trycua/cua-driver@${version} into ${scriptsDir}`);
+console.info(`install:cua-sdk: installing @trycua/cua-driver@${version} into ${targetNodeModules}`);
 const npmCli = process.env.npm_execpath ?? 'npm';
 const result = spawnSync(
   process.execPath,
@@ -43,7 +47,7 @@ const result = spawnSync(
     npmCli,
     'install',
     `@trycua/cua-driver@${version}`,
-    '--prefix', scriptsDir,
+    '--prefix', targetDir,
     '--no-save',
     '--no-package-lock',
     '--ignore-scripts',
@@ -61,12 +65,24 @@ if (!existsSync(marker)) {
   console.error('install:cua-sdk: FAIL (SDK package.json missing after install)');
   process.exit(1);
 }
-const native = join(
-  scriptsDir, 'node_modules', '@trycua',
-  `cua-driver-${process.platform}-${process.arch === 'x64' ? 'x64' : process.arch}-msvc`,
+// The native package name carries a toolchain suffix (win32: -msvc,
+// linux: -gnu), so discover it rather than recomputing the spelling.
+const atCuaDir = join(targetNodeModules, '@trycua');
+const nativeEntry = readdirSync(atCuaDir).find(
+  (entry) => entry.startsWith('cua-driver-') && statSync(join(atCuaDir, entry)).isDirectory(),
 );
-if (process.platform === 'win32' && !statSync(join(native, 'cua_driver_sdk.dll')).isFile()) {
-  console.error(`install:cua-sdk: FAIL (native package missing under ${native})`);
+if (nativeEntry === undefined) {
+  console.error('install:cua-sdk: FAIL (no @trycua/cua-driver-* native package installed)');
   process.exit(1);
 }
-console.info(`install:cua-sdk: PASS (${version})`);
+const nativeDir = join(atCuaDir, nativeEntry);
+const nativePayload =
+  process.platform === 'win32' ? ['cua_driver_sdk.dll'] : ['libcua_driver_sdk.so'];
+for (const file of [...nativePayload, 'cua_driver_node_runtime.node']) {
+  const path = join(nativeDir, file);
+  if (!statSync(path).isFile()) {
+    console.error(`install:cua-sdk: FAIL (native payload missing: ${nativeEntry}/${file})`);
+    process.exit(1);
+  }
+}
+console.info(`install:cua-sdk: PASS (${version} -> prebuilds/${platformTarget})`);

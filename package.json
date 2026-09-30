@@ -1,6 +1,6 @@
 {
   "name": "elftia-plugin-computer-use",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "description": "Elftia kind:agent plugin packaging the desktop-operator agent and the agent-agnostic computer-use skill for the computer-use CLI (v0.5 contract).",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "release": "elftia-plugin release dist/computer-use --out release",
     "verify:layout": "node scripts/verify-layout.mjs",
     "verify:cua-sdk": "node scripts/verify-cua-sdk.mjs",
-    "verify": "npm run lint && npm test && npm run verify:layout && npm run build && npm run verify:dist && npm run verify:cua-sdk"
+    "verify": "npm run lint && npm test && npm run verify:layout && npm run build && npm run verify:dist && npm run verify:cua-sdk && npm run release"
   },
   "devDependencies": {
     "@elftia/plugin-kit": "0.2.1",

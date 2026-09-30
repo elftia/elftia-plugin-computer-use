@@ -1,7 +1,10 @@
 {
   "name": "computer-use",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "kind": "agent",
+  "supportedPlatforms": [
+    "win32-x64"
+  ],
   "displayName": "Computer Use",
   "description": "Agent-agnostic desktop-control skill: drives the Windows desktop through the computer-use CLI with a screenshot-first perception-action loop. Bind it to any agent.",
   "contributes": {

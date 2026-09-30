@@ -9,7 +9,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 
-const RUNTIME_ROOT_ENTRIES = Object.freeze(["elftia-plugin.json", "skills"]);
+const RUNTIME_ROOT_ENTRIES = Object.freeze(["elftia-plugin.json", "prebuilds", "skills"]);
 const WORKTREE_ONLY_DIRECTORY_NAMES = new Set([
   ".computer-use",
   ".elftia-work",
@@ -153,6 +153,15 @@ export async function inventoryComputerUseSources(repoRootInput) {
   const entries = [];
   for (const rootEntry of RUNTIME_ROOT_ENTRIES) {
     const sourcePath = path.join(repoRoot, rootEntry);
+    // The prebuilds channel is optional: a source tree without native
+    // dependencies (clean contributor checkout) simply has no prebuilds/.
+    if (rootEntry === "prebuilds") {
+      try {
+        await lstat(sourcePath);
+      } catch {
+        continue;
+      }
+    }
     const state = await lstat(sourcePath);
     assert(
       !state.isSymbolicLink(),
@@ -226,10 +235,16 @@ export async function validateComputerUseTree(
   expectedInventory = null,
 ) {
   const rootNames = (await readdir(treeRoot)).sort();
+  // prebuilds/ is optional in both the source tree and the built tree; the
+  // mandatory roots are the manifest and the skill runtime.
+  const requiredRootNames = RUNTIME_ROOT_ENTRIES.filter(
+    (entry) => entry !== "prebuilds",
+  );
+  const optionalRootNames = rootNames.filter((entry) => entry === "prebuilds");
   assert(
     JSON.stringify(rootNames) ===
-      JSON.stringify([...RUNTIME_ROOT_ENTRIES].sort()),
-    `install tree root must contain only ${RUNTIME_ROOT_ENTRIES.join(" and ")}`,
+      JSON.stringify([...requiredRootNames, ...optionalRootNames].sort()),
+    `install tree root must contain only ${RUNTIME_ROOT_ENTRIES.join(" and ")} (prebuilds optional)`,
   );
 
   const manifest = JSON.parse(
@@ -264,13 +279,13 @@ export async function validateComputerUseTree(
       `required runtime file missing: ${requiredPath}`,
     );
   }
-  // node_modules is allowed ONLY inside the vendored CLI tree, where it
-  // carries the Cua Driver SDK runtime (@trycua/* + @ubjs/*, installed by
-  // scripts/install-cua-sdk.mjs on the build machine). Anywhere else it means
-  // an accidental npm install leaked into the shipped tree.
-  const VENDORED_SCRIPTS_PREFIX = "skills/computer-use/scripts/";
+  // node_modules is allowed ONLY inside the prebuilds channel
+  // (prebuilds/<platform>-<arch>/node_modules/** — the Cua Driver SDK runtime,
+  // installed by scripts/install-cua-sdk.mjs on the build machine). Anywhere
+  // else it means an accidental npm install leaked into the shipped tree.
+  const PREBUILDS_PREFIX = "prebuilds/";
   const strayNodeModulesEntry = inventory.entries.find((entry) => {
-    if (entry.path.startsWith(VENDORED_SCRIPTS_PREFIX)) return false;
+    if (entry.path.startsWith(PREBUILDS_PREFIX)) return false;
     const segments = entry.path.split("/");
     return (
       segments.includes("node_modules") ||
@@ -279,7 +294,7 @@ export async function validateComputerUseTree(
   });
   assert(
     strayNodeModulesEntry === undefined,
-    `node_modules / package-lock.json outside the vendored CLI tree is forbidden in dist: ${strayNodeModulesEntry?.path}`,
+    `node_modules / package-lock.json outside the prebuilds channel is forbidden in dist: ${strayNodeModulesEntry?.path}`,
   );
   if (expectedInventory !== null) {
     assert(
