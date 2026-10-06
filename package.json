@@ -1,6 +1,6 @@
 {
   "name": "elftia-plugin-computer-use",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "private": true,
   "description": "Elftia kind:agent plugin packaging the desktop-operator agent and the agent-agnostic computer-use skill for the computer-use CLI (v0.5 contract).",
   "license": "MIT",

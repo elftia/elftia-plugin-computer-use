@@ -169,7 +169,7 @@ describe('SKILL.md required sections', () => {
 
   it('documents automatic foreground visibility and hold input', () => {
     const visibility = section(/## Foreground-operation visibility/);
-    expect(visibility).toContain('arrow+hourglass');
+    expect(visibility).toContain('pulsing orange ring');
     expect(visibility).toContain('tray toast');
     expect(visibility).toContain('ELFTIA_CU_FOREGROUND_NOTICE=0');
     expect(visibility).toContain('--hold-ms');

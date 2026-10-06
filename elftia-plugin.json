@@ -1,6 +1,6 @@
 {
   "name": "computer-use",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "kind": "agent",
   "supportedPlatforms": [
     "win32-x64"

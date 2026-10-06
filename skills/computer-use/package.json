@@ -1,6 +1,6 @@
 {
   "name": "elftia-computer-use-vendored",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "description": "Vendored build of the elftia-computer-use CLI (dist), shipped inside the skill so installing the skill installs everything. Source of truth: the elftia-computer-use repository.",
   "type": "module"

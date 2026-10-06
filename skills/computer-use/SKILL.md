@@ -415,16 +415,18 @@ Any action that drives the REAL mouse or keyboard — core
 `click`/`type`/`key`/`scroll`/`drag`, MadoPilot `--route system`, Cua
 `delivery_mode:"foreground"` — automatically, for the duration of the action:
 
-1. swaps the system arrow cursor to an **arrow+hourglass** cursor, and
+1. shows a **CUA-style agent cursor overlay**: a pulsing orange ring
+   (click-through, always on top) that follows the real cursor, and
 2. fires a **tray toast** ("the agent is taking over the foreground
    mouse/keyboard"), throttled to at most one toast per ~30 s.
 
-The user's cursor scheme is restored the moment the action ends. The notice
-fails open (an error in it never blocks the input) and a machine can opt out
-with `ELFTIA_CU_FOREGROUND_NOTICE=0`. You do not need to do anything to get
-this — but when you plan a foreground sequence, tell the user the cursor will
-change while the agent is acting. For press-and-HOLD input (in-game walking,
-continuous scrolling, charge meters) use `key --hold-ms <ms>`.
+The ring hides itself ~6 s after the last foreground action (consecutive
+actions reuse one overlay). The notice fails open (an error in it never
+blocks the input) and a machine can opt out with
+`ELFTIA_CU_FOREGROUND_NOTICE=0`. You do not need to do anything to get this —
+but when you plan a foreground sequence, tell the user the cursor will carry
+the orange ring while the agent is acting. For press-and-HOLD input (in-game
+walking, continuous scrolling, charge meters) use `key --hold-ms <ms>`.
 
 ## Recipes
 
