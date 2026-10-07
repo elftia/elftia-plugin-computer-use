@@ -12,6 +12,7 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 // `npm install` has run).
 const ALLOWED_FILES = new Set([
   '.gitattributes',
+  '.github/workflows/release-package.yml',
   '.gitignore',
   'README.md',
   'elftia-plugin.json',

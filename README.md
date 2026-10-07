@@ -64,15 +64,12 @@ container) plus its external
 source, tests and development dependencies are deliberately outside the
 install tree.
 
-Since 0.9.0 the skill ships the Cua Driver SDK runtime inside
-`skills/computer-use/scripts/node_modules/` (installed on the build machine
-via `npm run install:cua-sdk`). The official `elftia-plugin release` command
-still REJECTS node_modules in the install tree, so the epkg channel for the
-Cua-enabled build is blocked until the packaging policy lands (Phase 3 of the
-Cua integration plan, `docs/research/cua-driver-integration-plan.md` in the
-main repository). Until then `npm run verify` stops after `verify:dist`, and
-local installs should use the `dist/computer-use` tree via the plugin
-manager's install-from-directory flow.
+The official release workflow installs the pinned Windows Cua Driver SDK into
+`prebuilds/win32-x64/node_modules/`, validates the native payload, and ships it
+in the signed `.epkg`. This path is the packaging exception for the SDK; other
+`node_modules` trees remain forbidden. Local builds include the SDK after
+`npm run install:cua-sdk`. MadoPilot binaries are separate local build inputs
+and are not included in the official CI package.
 
 After installation, the plugin appears in the plugin manager and the
 **computer-use-cli** skill becomes available in the skill library, ready to attach
@@ -148,7 +145,7 @@ npm test        # vitest: structural contracts + verbatim vocabulary pin
 npm run lint    # self-contained flat eslint (elftia basics)
 npm run install:cua-sdk  # vendor @trycua/cua-driver runtime into the skill tree
 npm run verify  # lint + test + source layout + build + shipped-byte parity + cua-sdk checks
-npm run release # epkg (blocked while node_modules ships in-tree; see above)
+npm run release # epkg and integrity sidecar
 ```
 
 Cua SDK upgrade flow: change the version in `scripts/install-cua-sdk.mjs`

@@ -20,12 +20,19 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const treeRoot = process.argv[2]
   ? join(repoRoot, process.argv[2])
   : join(repoRoot, 'dist', 'computer-use');
-const platformTarget = `${process.platform}-${process.arch}`;
+const platformTarget = process.env.ELFTIA_CUA_TARGET ?? `${process.platform}-${process.arch}`;
+if (!/^(?:win32|linux|darwin)-(?:x64|arm64)$/.test(platformTarget)) {
+  throw new Error(`Unsupported Cua SDK target: ${platformTarget}`);
+}
 const targetNodeModules = join(treeRoot, 'prebuilds', platformTarget, 'node_modules');
 const sdkPackage = join(targetNodeModules, '@trycua', 'cua-driver', 'package.json');
 const manifestPath = join(treeRoot, 'elftia-plugin.json');
 
 if (!existsSync(sdkPackage)) {
+  if (process.env.ELFTIA_CUA_TARGET) {
+    console.error(`verify-cua-sdk: FAIL (required SDK absent: ${platformTarget})`);
+    process.exit(1);
+  }
   console.info('verify-cua-sdk: SKIP (@trycua/cua-driver not installed in prebuilds; run npm run install:cua-sdk on the build machine)');
   process.exit(0);
 }
@@ -67,7 +74,7 @@ if (nativeEntry === undefined) {
   // File layout is load-bearing: @ubjs/node resolves the dll by crate name
   // relative to the .node runtime — they must sit in the same directory.
   const payload =
-    process.platform === 'win32'
+    platformTarget.startsWith('win32-')
       ? ['cua_driver_sdk.dll', 'cua_driver_node_runtime.node']
       : ['libcua_driver_sdk.so', 'cua_driver_node_runtime.node'];
   for (const file of payload) {
@@ -80,7 +87,7 @@ if (nativeEntry === undefined) {
 
 // Load check: the vendored CLI must come back healthy from its own tree,
 // resolving the SDK through the prebuilds channel (NOT repo node_modules).
-if (failures.length === 0) {
+if (failures.length === 0 && platformTarget === `${process.platform}-${process.arch}`) {
   const health = spawnSync(
     process.execPath,
     [join(treeRoot, 'skills', 'computer-use', 'scripts', 'cli.js'), 'cua', '--action', 'health'],
@@ -102,4 +109,4 @@ if (failures.length > 0) {
   for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.info(`verify-cua-sdk: PASS (@trycua/cua-driver ${sdk.version} via prebuilds/${platformTarget}, native loads)`);
+console.info(`verify-cua-sdk: PASS (@trycua/cua-driver ${sdk.version} via prebuilds/${platformTarget}${platformTarget === `${process.platform}-${process.arch}` ? ', native loads' : ', cross-target payload checked'})`);

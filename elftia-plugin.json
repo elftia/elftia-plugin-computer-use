@@ -1,6 +1,7 @@
 {
   "name": "computer-use",
   "version": "0.9.4",
+  "minElftiaVersion": "0.2.8",
   "kind": "agent",
   "supportedPlatforms": [
     "win32-x64"

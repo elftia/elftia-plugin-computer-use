@@ -14,7 +14,11 @@ import { fileURLToPath } from 'node:url';
 
 const SDK_VERSION = '0.30.4';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const platformTarget = `${process.platform}-${process.arch}`;
+const platformTarget = process.env.ELFTIA_CUA_TARGET ?? `${process.platform}-${process.arch}`;
+if (!/^(?:win32|linux|darwin)-(?:x64|arm64)$/.test(platformTarget)) {
+  throw new Error(`Unsupported Cua SDK target: ${platformTarget}`);
+}
+const [targetOs, targetArch] = platformTarget.split('-');
 const targetDir = join(repoRoot, 'prebuilds', platformTarget);
 const targetNodeModules = join(targetDir, 'node_modules');
 const marker = join(targetNodeModules, '@trycua', 'cua-driver', 'package.json');
@@ -53,6 +57,8 @@ const result = spawnSync(
     '--ignore-scripts',
     '--no-audit',
     '--no-fund',
+    `--os=${targetOs}`,
+    `--cpu=${targetArch}`,
   ],
   { stdio: 'inherit', shell: false },
 );
@@ -77,7 +83,7 @@ if (nativeEntry === undefined) {
 }
 const nativeDir = join(atCuaDir, nativeEntry);
 const nativePayload =
-  process.platform === 'win32' ? ['cua_driver_sdk.dll'] : ['libcua_driver_sdk.so'];
+  targetOs === 'win32' ? ['cua_driver_sdk.dll'] : ['libcua_driver_sdk.so'];
 for (const file of [...nativePayload, 'cua_driver_node_runtime.node']) {
   const path = join(nativeDir, file);
   if (!statSync(path).isFile()) {
